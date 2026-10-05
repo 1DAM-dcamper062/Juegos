@@ -7,7 +7,7 @@
 Descarga el archivo:
 
 ```text
-ZombieRobotArena.java
+ZombieShooter.java
 ```
 
 ### 2. Descarga Java
@@ -23,7 +23,7 @@ Ejecuta los siguientes comandos:
 #### 1. Compilar el juego
 
 ```text
-javac ZombieRobotArena.java
+javac ZombieShooter.java
 ```
 
 #### 2. Ejecutar el juego
