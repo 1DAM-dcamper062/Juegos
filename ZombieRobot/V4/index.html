@@ -16,14 +16,15 @@
   <h1>Zombie Robot Arena - Versión 4</h1>
   <div id="container"></div>
 
-  <script>
+<script>
     async function main() {
       await cheerpjInit();
       cheerpjCreateDisplay(800, 600, document.getElementById("container"));
       
-      await cheerpjRunJar("ZombieRobotArena.jar");
+      // Especificamos el .jar y la clase principal exacta
+      await cheerpjRunJar("ZombieRobotArena.jar", "ZombieRobotArena");
     }
     main();
   </script>
-</body>
+  </body>
 </html>
