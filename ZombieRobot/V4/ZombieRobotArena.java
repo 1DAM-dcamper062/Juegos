@@ -509,13 +509,13 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
     int weaponDamage(int i){return 20+(weaponLevel[i]-1)*7+(i==1?15:i==3?20:0);}
 
     Color skinColor(int i){
-        return switch(i){
-            case 1->new Color(200,65,70);
-            case 2->new Color(60,190,100);
-            case 3->new Color(165,75,220);
-            case 4->new Color(230,180,45);
-            default->new Color(55,155,235);
-        };
+        switch(i){
+            case 1: return new Color(200,65,70);
+            case 2: return new Color(60,190,100);
+            case 3: return new Color(165,75,220);
+            case 4: return new Color(230,180,45);
+            default: return new Color(55,155,235);
+        }
     }
 
     void drawGameOver(Graphics2D g){
