@@ -13,8 +13,13 @@ import java.util.List;
 public class ZombieRobotArena extends JPanel implements ActionListener, KeyListener, MouseMotionListener, MouseListener {
 
     static final int W = 1100, H = 720;
-    static final int MENU=0, PLAY=1, PAUSE=2, SHOP=3, GAMEOVER=4, WIN=5;
+    static final int MENU=0, MAP=1, PLAY=2, PAUSE=3, SHOP=4, GAMEOVER=5, WIN=6;
     int screen = MENU;
+    int shopReturnScreen = MENU;
+    int selectedMapLevel = 1;
+    int[] unlockedLevels = {1,1,1};
+    int[][] bestStars = new int[3][51];
+    int lastCoinGain = 0, coinPopupTimer = 0;
 
     final Random rnd = new Random();
     final javax.swing.Timer timer = new javax.swing.Timer(16, this);
@@ -69,12 +74,29 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
     }
 
     void startGame(){
-        screen=PLAY;
-        level=1; wave=1; wavesThisLevel=0;
+        screen=MAP;
+        selectedMapLevel=Math.max(1,Math.min(50,unlockedLevels[difficulty]));
         score=0;kills=0;coins=0;
         enemies.clear();bullets.clear();coinsClear();particles.clear();texts.clear();
         player=new Player(W/2,H/2);
+    }
+
+    void beginLevel(int chosen){
+        if(chosen<1 || chosen>unlockedLevels[difficulty]) return;
+        level=chosen; wave=1; wavesThisLevel=0;
+        screen=PLAY;
+        enemies.clear();bullets.clear();coinsClear();particles.clear();texts.clear();
+        player=new Player(W/2,H/2);
         startWave();
+    }
+
+    void completeLevel(){
+        int stars=player.hp>70?3:player.hp>35?2:1;
+        bestStars[difficulty][level]=Math.max(bestStars[difficulty][level],stars);
+        if(level<50) unlockedLevels[difficulty]=Math.max(unlockedLevels[difficulty],level+1);
+        else { screen=WIN; return; }
+        selectedMapLevel=Math.min(50,level+1);
+        screen=MAP;
     }
 
     void coinsClear(){ coinDrops.clear(); }
@@ -111,7 +133,7 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
                 transitionTimer--;
                 if(transitionTimer<=0){
                     transition=false;
-                    if(bossWave) nextLevel();
+                    if(bossWave) completeLevel();
                     else { wave++; startWave(); }
                 }
                 updateParticles();
@@ -139,6 +161,7 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
             updateCoins();
             updateParticles();
             updateTexts();
+            if(coinPopupTimer>0) coinPopupTimer--;
 
             if(player.hp<=0) screen=GAMEOVER;
         }
@@ -227,7 +250,9 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
             if(dist(c.x,c.y,player.x,player.y)<player.radius+12){
                 coins+=c.value;
                 score+=c.value;
-                texts.add(new FloatingText("+"+c.value,c.x,c.y,new Color(255,215,50)));
+                lastCoinGain=c.value;
+                coinPopupTimer=75;
+                texts.add(new FloatingText("+"+c.value+" monedas",c.x,c.y,new Color(255,215,50)));
                 it.remove();
             }
         }
@@ -279,6 +304,7 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
     void drawGame(Graphics2D g){
         drawArena(g);
         if(screen==MENU)drawMenu(g);
+        else if(screen==MAP)drawLevelMap(g);
         else if(screen==PLAY)drawHUD(g);
         else if(screen==PAUSE){drawHUD(g);drawPause(g);}
         else if(screen==SHOP)drawShop(g);
@@ -325,6 +351,68 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
         player.draw(g);
     }
 
+    void drawLevelMap(Graphics2D g){
+        GradientPaint bg=new GradientPaint(0,0,new Color(3,8,15),W,H,new Color(17,24,38));
+        g.setPaint(bg); g.fillRect(0,0,W,H);
+        g.setColor(new Color(20,55,80,100));
+        for(int i=-H;i<W;i+=90) g.drawLine(i,H,i+H,0);
+        g.setColor(new Color(40,180,220,25));
+        for(int i=0;i<18;i++) g.fillOval((i*173)%W,(i*97)%H,120,120);
+
+        // Header
+        g.setColor(new Color(7,15,25,245)); g.fillRect(0,0,W,92);
+        g.setColor(new Color(70,210,240,150)); g.fillRect(0,90,W,2);
+        g.setFont(new Font("Arial",Font.BOLD,34)); g.setColor(Color.WHITE);
+        g.drawString("SELECCIÓN DE NIVELES",34,43);
+        g.setFont(new Font("Arial",Font.PLAIN,14)); g.setColor(new Color(150,175,200));
+        g.drawString("Completa un nivel para desbloquear el siguiente",36,68);
+        g.setFont(new Font("Arial",Font.BOLD,17)); g.setColor(new Color(255,215,70));
+        drawCoinIcon(g, 882, 36, 11); g.drawString(String.valueOf(coins),900,42);
+        g.setColor(new Color(90,220,245));
+        g.drawString("DIFICULTAD: "+difficultyName,870,68);
+
+        // Mapa / nodos
+        int startX=85,startY=145,dx=105,dy=92;
+        for(int i=1;i<=50;i++){
+            int row=(i-1)/10,col=(i-1)%10;
+            int x=startX+col*dx+(row%2)*28, y=startY+row*dy;
+            if(i<50){
+                int nx=startX+(i%10)*dx+(((i)/10)%2)*28;
+                int ny=startY+((i)/10)*dy;
+                if((i-1)/10==i/10) { g.setColor(i<unlockedLevels[difficulty]?new Color(70,200,230,110):new Color(70,80,95,70)); g.setStroke(new BasicStroke(3)); g.drawLine(x,y,nx,ny); }
+            }
+            boolean unlocked=i<=unlockedLevels[difficulty];
+            boolean current=i==selectedMapLevel;
+            Color node=unlocked?(i<unlockedLevels[difficulty]?new Color(45,205,150):new Color(55,150,235)):new Color(50,58,70);
+            if(current) node=new Color(255,145,45);
+            g.setColor(new Color(0,0,0,120)); g.fillOval(x-25,y-21,50,50);
+            g.setColor(node); g.fillOval(x-24,y-24,48,48);
+            g.setColor(unlocked?new Color(220,250,255,220):new Color(120,130,145));
+            g.setStroke(new BasicStroke(current?3:2)); g.drawOval(x-24,y-24,48,48);
+            g.setFont(new Font("Arial",Font.BOLD,16)); g.setColor(Color.WHITE);
+            String n=String.valueOf(i); g.drawString(n,x-g.getFontMetrics().stringWidth(n)/2,y+6);
+            if(!unlocked){ g.setFont(new Font("Arial",Font.PLAIN,15)); g.setColor(new Color(180,190,205)); drawLockIcon(g, x, y+1); }
+            int stars=bestStars[difficulty][i];
+            g.setFont(new Font("Arial",Font.BOLD,12));
+            for(int st=0;st<3;st++){ g.setColor(st<stars?new Color(255,210,70):new Color(80,90,105)); g.drawString("★",x-20+st*14,y+42); }
+        }
+
+        // Panel inferior
+        int py=555;
+        g.setColor(new Color(8,17,28,245)); g.fillRoundRect(35,py,W-70,125,20,20);
+        g.setColor(new Color(60,150,200,100)); g.drawRoundRect(35,py,W-70,125,20,20);
+        g.setFont(new Font("Arial",Font.BOLD,22)); g.setColor(Color.WHITE);
+        g.drawString("NIVEL "+selectedMapLevel,65,590);
+        g.setFont(new Font("Arial",Font.PLAIN,14)); g.setColor(new Color(160,180,205));
+        g.drawString(selectedMapLevel==50?"Arena final · Jefe definitivo":"Arena de combate · Oleadas y jefe",65,615);
+        g.setColor(new Color(255,210,70)); g.setFont(new Font("Arial",Font.BOLD,15));
+        g.drawString("Mejor puntuación: "+(bestStars[difficulty][selectedMapLevel]>0?bestStars[difficulty][selectedMapLevel]+" ★":"Sin completar"),65,642);
+        Rectangle playMap=new Rectangle(820,585,220,55);
+        button(g,playMap,"▶  JUGAR NIVEL",new Color(235,115,35));
+        Rectangle backMap=new Rectangle(590,585,205,55);
+        button(g,backMap,"‹  MENÚ",new Color(65,100,135));
+    }
+
     void drawHUD(Graphics2D g){
         // Panel superior
         g.setPaint(new GradientPaint(0,0,new Color(9,14,22,245),0,82,new Color(18,25,36,235)));
@@ -366,6 +454,14 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
         g.setFont(new Font("Arial",Font.BOLD,19));
         g.setColor(new Color(255,225,90));
         g.drawString(String.valueOf(coins),372,44);
+        if(coinPopupTimer>0){
+            int alpha=Math.min(255,coinPopupTimer*4);
+            g.setColor(new Color(255,205,55,Math.min(90,alpha)));
+            g.fillRoundRect(330,54,125,22,11,11);
+            g.setFont(new Font("Arial",Font.BOLD,12));
+            g.setColor(new Color(255,235,130,alpha));
+            g.drawString("+"+lastCoinGain+" monedas",345,69);
+        }
 
         // Vida
         int hpw=210;
@@ -467,43 +563,123 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
     }
 
     void drawShop(Graphics2D g){
-        g.setColor(new Color(11,14,20));g.fillRect(0,0,W,H);
-        center(g,"ARSENAL Y PERSONALIZACIÓN",65,new Font("Arial",Font.BOLD,34),Color.WHITE);
-        g.setFont(new Font("Arial",Font.BOLD,18));g.setColor(new Color(255,215,50));
-        g.drawString("🪙 Monedas: "+coins,35,105);
+        g.setPaint(new GradientPaint(0,0,new Color(4,9,16),W,H,new Color(15,24,38)));
+        g.fillRect(0,0,W,H);
+        g.setColor(new Color(30,115,155,35)); g.fillOval(-180,80,500,500);
+        g.setColor(new Color(190,50,120,25)); g.fillOval(W-350,180,500,500);
+        g.setColor(new Color(7,15,25,245)); g.fillRect(0,0,W,86);
+        g.setColor(new Color(70,210,240,140)); g.fillRect(0,84,W,2);
+        g.setFont(new Font("Arial",Font.BOLD,32)); g.setColor(Color.WHITE);
+        g.drawString("ARSENAL",35,42);
+        g.setFont(new Font("Arial",Font.PLAIN,14)); g.setColor(new Color(150,175,200));
+        g.drawString("Equipa, compra y mejora tu arsenal",36,66);
+        g.setColor(new Color(255,215,60)); g.fillOval(820,25,24,24);
+        g.setFont(new Font("Arial",Font.BOLD,20)); g.setColor(new Color(255,230,120)); g.drawString(String.valueOf(coins),855,44);
 
-        g.setFont(new Font("Arial",Font.BOLD,20));g.setColor(Color.WHITE);
-        g.drawString("ARMAS",45,145);
+        // Weapon cards
+        g.setFont(new Font("Arial",Font.BOLD,18)); g.setColor(new Color(90,220,245)); g.drawString("ARMAS",40,125);
         for(int i=0;i<4;i++){
-            int y=165+i*68;
-            Rectangle r=new Rectangle(35,y,315,52);
-            Color c=i==selectedWeapon?new Color(40,130,200):new Color(35,40,50);
-            button(g,r,weaponNames[i]+"  "+(ownedWeapons[i]?"[USAR]":"["+weaponCost[i]+" 🪙]"),c);
-            if(i==selectedWeapon){
-                g.setFont(new Font("Arial",Font.PLAIN,13));g.setColor(Color.LIGHT_GRAY);
-                g.drawString("Nivel "+weaponLevel[i]+"   Daño: "+(weaponDamage(i)),
-                        370,y+32);
-            }
+            int x=35+i*265, y=145;
+            g.setColor(new Color(9,20,32,245)); g.fillRoundRect(x,y,245,260,18,18);
+            g.setColor(i==selectedWeapon?new Color(255,145,45):new Color(45,105,135));
+            g.setStroke(new BasicStroke(i==selectedWeapon?3:1.5f)); g.drawRoundRect(x,y,245,260,18,18);
+            g.setColor(new Color(25,40,55)); g.fillRoundRect(x+18,y+18,209,90,12,12);
+            g.setColor(new Color(100,210,240,22)); g.fillOval(x+45,y+22,155,82);
+            drawWeaponGraphic(g, i, x+122, y+63, 1.45);
+            g.setFont(new Font("Arial",Font.BOLD,17)); g.setColor(Color.WHITE); g.drawString(weaponNames[i],x+20,y+137);
+            g.setFont(new Font("Arial",Font.PLAIN,12)); g.setColor(new Color(145,165,190)); g.drawString("NIVEL "+weaponLevel[i]+" / 8",x+20,y+158);
+            statBar(g,x+20,y+180,"DAÑO",Math.min(1,(weaponDamage(i))/80.0));
+            statBar(g,x+20,y+202,"CADENCIA",Math.min(1,(10.0/(weaponLevel[i]+3))));
+            Rectangle r=new Rectangle(x+20,y+220,205,30);
+            if(ownedWeapons[i]) button(g,r,i==selectedWeapon?"EQUIPADA":"EQUIPAR",i==selectedWeapon?new Color(40,170,115):new Color(55,105,145));
+            else { button(g,r,weaponCost[i]+" monedas",new Color(180,110,35)); }
         }
 
-        Rectangle upg=new Rectangle(370,165,250,52);
-        button(g,upg,"MEJORAR ("+(weaponLevel[selectedWeapon]*180)+" 🪙)",
-                new Color(220,150,40));
+        g.setFont(new Font("Arial",Font.BOLD,18)); g.setColor(new Color(90,220,245)); g.drawString("MEJORAS",40,445);
+        g.setColor(new Color(9,20,32,245)); g.fillRoundRect(35,462,510,130,18,18);
+        g.setColor(new Color(50,120,150,110)); g.drawRoundRect(35,462,510,130,18,18);
+        g.setFont(new Font("Arial",Font.BOLD,20)); g.setColor(Color.WHITE); g.drawString(weaponNames[selectedWeapon]+" · NIVEL "+weaponLevel[selectedWeapon],58,495);
+        g.setFont(new Font("Arial",Font.PLAIN,13)); g.setColor(new Color(155,180,205)); g.drawString("Aumenta el daño y la velocidad de disparo.",58,520);
+        Rectangle upgrade=new Rectangle(58,540,220,36);
+        button(g,upgrade,"MEJORAR · "+(weaponLevel[selectedWeapon]<8?weaponLevel[selectedWeapon]*180:"MAX"),new Color(210,125,35));
 
-        g.setFont(new Font("Arial",Font.BOLD,20));g.setColor(Color.WHITE);
-        g.drawString("SKINS",670,145);
+        g.setFont(new Font("Arial",Font.BOLD,18)); g.setColor(new Color(255,110,170)); g.drawString("SKINS",590,445);
         for(int i=0;i<5;i++){
-            int y=165+i*60;
-            Rectangle r=new Rectangle(650,y,400,46);
-            button(g,r,skinNames[i]+"  "+(ownedSkins[i]?"[USAR]":"["+skinCost[i]+" 🪙]"),
-                    skinColor(i));
+            int x=590+(i%5)*98,y=462;
+            g.setColor(new Color(9,20,32,245)); g.fillRoundRect(x,y,86,130,14,14);
+            g.setColor(i==selectedSkin?skinColor(i):new Color(55,80,100)); g.drawRoundRect(x,y,86,130,14,14);
+            g.setColor(skinColor(i)); g.fillOval(x+25,y+16,36,45);
+            g.setFont(new Font("Arial",Font.BOLD,10)); g.setColor(Color.WHITE); String sn=skinNames[i]; g.drawString(sn,x+43-g.getFontMetrics().stringWidth(sn)/2,y+78);
+            g.setColor(new Color(145,165,185)); g.setFont(new Font("Arial",Font.PLAIN,9));
+            g.drawString(ownedSkins[i]?"DESBLOQUEADA":skinCost[i]+" monedas",x+43-g.getFontMetrics().stringWidth(ownedSkins[i]?"DESBLOQUEADA":skinCost[i]+" monedas")/2,y+98);
         }
+        Rectangle back=new Rectangle(900,635,180,48); button(g,back,"‹  VOLVER",new Color(65,100,135));
+    }
 
-        Rectangle back=new Rectangle(420,620,260,52);
-        button(g,back,"VOLVER",new Color(90,95,105));
-        g.setFont(new Font("Arial",Font.PLAIN,14));g.setColor(Color.LIGHT_GRAY);
-        g.drawString("Comprar: pulsa el botón. Mejorar: sube daño y cadencia.",
-                370,250);
+    void drawCoinIcon(Graphics2D g, int cx, int cy, int r){
+        g.setColor(new Color(255,190,35));
+        g.fillOval(cx-r,cy-r,r*2,r*2);
+        g.setColor(new Color(255,235,120));
+        g.setStroke(new BasicStroke(Math.max(1,r/4f)));
+        g.drawOval(cx-r+1,cy-r+1,r*2-2,r*2-2);
+        g.setFont(new Font("Arial",Font.BOLD,Math.max(8,r+3)));
+        g.setColor(new Color(150,90,10));
+        String s="$"; FontMetrics fm=g.getFontMetrics();
+        g.drawString(s,cx-fm.stringWidth(s)/2,cy+fm.getAscent()/3);
+    }
+
+    void drawLockIcon(Graphics2D g, int cx, int cy){
+        g.setStroke(new BasicStroke(2.5f));
+        g.setColor(new Color(155,170,190));
+        g.drawArc(cx-7,cy-10,14,14,0,180);
+        g.setColor(new Color(70,82,98));
+        g.fillRoundRect(cx-9,cy-3,18,14,4,4);
+        g.setColor(new Color(205,215,225));
+        g.fillOval(cx-2,cy+1,4,6);
+    }
+
+    void drawWeaponGraphic(Graphics2D g, int type, int cx, int cy, double scale){
+        Graphics2D w=(Graphics2D)g.create();
+        w.translate(cx,cy); w.scale(scale,scale);
+        w.setStroke(new BasicStroke(3f));
+        w.setColor(new Color(0,0,0,90)); w.fillRoundRect(-75,20,150,10,5,5);
+        Color metal=new Color(115,132,150), dark=new Color(25,31,40), accent=new Color(70,205,235);
+        if(type==0){
+            w.setColor(dark); w.fillRoundRect(-48,-10,68,24,7,7);
+            w.setColor(metal); w.fillRoundRect(-28,-17,55,10,4,4);
+            w.setColor(new Color(180,195,210)); w.fillRect(22,-14,25,6);
+            w.setColor(dark); w.fillRoundRect(-12,10,20,37,5,5);
+            w.setColor(accent); w.fillRect(-38,-5,22,4);
+        } else if(type==1){
+            w.setColor(dark); w.fillRoundRect(-45,-8,65,18,5,5);
+            w.setColor(metal); w.fillRect(5,-13,70,8); w.fillRect(5,0,70,8);
+            w.setColor(new Color(75,82,95)); w.fillRect(-62,-5,22,10);
+            w.setColor(dark); w.fillRoundRect(-15,8,18,35,5,5);
+            w.setColor(accent); w.fillRect(-5,-18,13,4);
+        } else if(type==2){
+            w.setColor(dark); w.fillRoundRect(-48,-12,70,25,6,6);
+            w.setColor(metal); w.fillRect(10,-17,55,8);
+            w.setColor(new Color(75,85,100)); w.fillRect(-58,-7,15,12);
+            w.setColor(dark); w.fillRoundRect(-8,8,18,32,5,5);
+            w.setColor(new Color(45,52,62)); w.fillRoundRect(-28,10,16,28,4,4);
+            w.setColor(accent); w.fillRect(-30,-7,30,4);
+        } else {
+            w.setColor(dark); w.fillRoundRect(-52,-11,78,24,6,6);
+            w.setColor(metal); w.fillRect(20,-15,78,7);
+            w.setColor(new Color(65,75,90)); w.fillRect(-72,-5,25,10);
+            w.setColor(dark); w.fillRoundRect(-10,9,17,35,5,5);
+            w.setColor(new Color(45,52,62)); w.fillRoundRect(-35,10,27,25,4,4);
+            w.setColor(accent); w.fillRect(-30,-7,38,4);
+            w.setColor(new Color(180,195,210)); w.fillRect(0,-21,25,5);
+        }
+        w.setColor(new Color(235,245,255,120)); w.drawLine(-35,-13,10,-13);
+        w.dispose();
+    }
+
+    void statBar(Graphics2D g,int x,int y,String label,double value){
+        g.setFont(new Font("Arial",Font.BOLD,9)); g.setColor(new Color(140,165,190)); g.drawString(label,x,y+8);
+        g.setColor(new Color(35,45,58)); g.fillRoundRect(x+70,y,125,8,4,4);
+        g.setColor(new Color(50,190,235)); g.fillRoundRect(x+70,y,(int)(125*Math.max(0,Math.min(1,value))),8,4,4);
     }
 
     int weaponDamage(int i){return 20+(weaponLevel[i]-1)*7+(i==1?15:i==3?20:0);}
@@ -592,7 +768,8 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
 
         if(k==KeyEvent.VK_B && (screen==PLAY||screen==PAUSE))screen=SHOP;
 
-        if(k==KeyEvent.VK_ENTER && (screen==GAMEOVER||screen==WIN))screen=MENU;
+        if(k==KeyEvent.VK_ENTER && screen==GAMEOVER)screen=MAP;
+        if(k==KeyEvent.VK_ENTER && screen==WIN)screen=MENU;
     }
 
     @Override public void keyReleased(KeyEvent e){
@@ -604,7 +781,17 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
     }
     @Override public void keyTyped(KeyEvent e){}
 
-    @Override public void mouseMoved(MouseEvent e){mouseX=e.getX();mouseY=e.getY();}
+    @Override public void mouseMoved(MouseEvent e){
+        mouseX=e.getX();mouseY=e.getY();
+        if(screen==MAP){
+            int startX=85,startY=145,dx=105,dy=92;
+            for(int i=1;i<=50;i++){
+                int row=(i-1)/10,col=(i-1)%10;
+                int x=startX+col*dx+(row%2)*28, y=startY+row*dy;
+                if(dist(e.getX(),e.getY(),x,y)<30 && i<=unlockedLevels[difficulty]) selectedMapLevel=i;
+            }
+        }
+    }
     @Override public void mouseDragged(MouseEvent e){mouseMoved(e);}
 
     @Override public void mousePressed(MouseEvent e){
@@ -616,26 +803,35 @@ public class ZombieRobotArena extends JPanel implements ActionListener, KeyListe
             else if(difficultyButton.contains(e.getPoint())){
                 difficulty=(difficulty+1)%3;
                 difficultyName=difficulty==0?"FÁCIL":difficulty==1?"NORMAL":"DIFÍCIL";
-            } else if(shopButton.contains(e.getPoint()))screen=SHOP;
+            } else if(shopButton.contains(e.getPoint())){shopReturnScreen=MENU;screen=SHOP;}
             else if(exitButton.contains(e.getPoint()))System.exit(0);
+        } else if(screen==MAP){
+            int startX=85,startY=145,dx=105,dy=92;
+            for(int i=1;i<=50;i++){
+                int row=(i-1)/10,col=(i-1)%10;
+                int x=startX+col*dx+(row%2)*28, y=startY+row*dy;
+                if(dist(e.getX(),e.getY(),x,y)<30 && i<=unlockedLevels[difficulty]){selectedMapLevel=i;return;}
+            }
+            if(new Rectangle(820,585,220,55).contains(e.getPoint())) beginLevel(selectedMapLevel);
+            else if(new Rectangle(590,585,205,55).contains(e.getPoint())) screen=MENU;
         } else if(screen==PLAY)shooting=true;
         else if(screen==PAUSE){
             if(resumeButton.contains(e.getPoint()))screen=PLAY;
-            else if(pauseShopButton.contains(e.getPoint()))screen=SHOP;
+            else if(pauseShopButton.contains(e.getPoint())){shopReturnScreen=PAUSE;screen=SHOP;}
             else if(pauseExitButton.contains(e.getPoint()))screen=MENU;
         } else if(screen==SHOP){
-            if(new Rectangle(420,620,260,52).contains(e.getPoint())){
-                screen=PLAY;
+            if(new Rectangle(900,635,180,48).contains(e.getPoint())){
+                screen=shopReturnScreen;
             } else {
                 for(int i=0;i<4;i++){
-                    Rectangle r=new Rectangle(35,165+i*68,315,52);
+                    Rectangle r=new Rectangle(35+i*265,145,245,260);
                     if(r.contains(e.getPoint())){buyOrSelectWeapon(i);return;}
                 }
-                if(new Rectangle(370,165,250,52).contains(e.getPoint())){
+                if(new Rectangle(58,540,220,36).contains(e.getPoint())){
                     upgradeWeapon();return;
                 }
                 for(int i=0;i<5;i++){
-                    Rectangle r=new Rectangle(650,165+i*60,400,46);
+                    Rectangle r=new Rectangle(590+(i%5)*98,462,86,130);
                     if(r.contains(e.getPoint())){buyOrSelectSkin(i);return;}
                 }
             }
