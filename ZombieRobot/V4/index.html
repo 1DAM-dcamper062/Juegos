@@ -2,16 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Zombie Robot Arena - V4 (Final)</title>
+  <title>Zombie Robot Arena - Versión 4 (Final)</title>
+  <!-- Cargamos CheerpJ para ejecutar Java en la web -->
   <script src="https://cjrtnc.leaningtech.com/3.0/cj3loader.js"></script>
   <style>
-    body { background: #111; color: #fff; font-family: sans-serif; text-align: center; margin: 0; }
+    body { background: #111; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding-top: 20px; }
     #container { margin: 20px auto; width: 800px; height: 600px; }
     a { color: #00bcff; text-decoration: none; font-weight: bold; }
   </style>
 </head>
 <body>
-  <p><a href="../index.html">← Volver al menú de juegos</a></p>
+  <p><a href="../../index.html">← Volver al menú de versiones</a></p>
   <h1>Zombie Robot Arena - Versión 4</h1>
   <div id="container"></div>
 
@@ -19,7 +20,8 @@
     async function main() {
       await cheerpjInit();
       cheerpjCreateDisplay(800, 600, document.getElementById("container"));
-      // Apunta al archivo JAR dentro de la carpeta V4 (cambia el nombre si tu .jar se llama distinto)
+      
+      // Asegúrate de que el nombre de tu ejecutable .jar en V4 coincide exactamente aquí
       await cheerpjRunJar("/app/Robot zombi/V4/ZombieRobotArena.jar");
     }
     main();
