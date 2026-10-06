@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Zombie Robot Arena - V4 (Final)</title>
+  <script src="https://cjrtnc.leaningtech.com/3.0/cj3loader.js"></script>
+  <style>
+    body { background: #111; color: #fff; font-family: sans-serif; text-align: center; margin: 0; }
+    #container { margin: 20px auto; width: 800px; height: 600px; }
+    a { color: #00bcff; text-decoration: none; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <p><a href="../index.html">← Volver al menú de juegos</a></p>
+  <h1>Zombie Robot Arena - Versión 4</h1>
+  <div id="container"></div>
+
+  <script>
+    async function main() {
+      await cheerpjInit();
+      cheerpjCreateDisplay(800, 600, document.getElementById("container"));
+      // Apunta al archivo JAR dentro de la carpeta V4 (cambia el nombre si tu .jar se llama distinto)
+      await cheerpjRunJar("/app/Robot zombi/V4/ZombieRobotArena.jar");
+    }
+    main();
+  </script>
+</body>
+</html>
