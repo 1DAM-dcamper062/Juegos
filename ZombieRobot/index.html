@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zombie Robot Arena - Menú</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      color: #00ff66;
+      margin-bottom: 30px;
+    }
+    .cards-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .card {
+      background-color: #1e1e1e;
+      border: 2px solid #333;
+      border-radius: 10px;
+      padding: 20px;
+      width: 200px;
+      text-align: center;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      border-color: #00ff66;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #00ff66;
+      color: #000;
+      text-decoration: none;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+    .btn:hover {
+      background-color: #00cc52;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Selecciona una versión</h1>
+
+  <div class="cards-container">
+    <div class="card">
+      <h2>Versión 1.0</h2>
+      <a href="V1/" class="btn">Jugar V1</a>
+    </div>
+    <div class="card">
+      <h2>Versión 2.0</h2>
+      <a href="V2/" class="btn">Jugar V2</a>
+    </div>
+    <div class="card">
+      <h2>Versión 3.0</h2>
+      <a href="V3/" class="btn">Jugar V3</a>
+    </div>
+    <div class="card">
+      <h2>Versión 4.0</h2>
+      <a href="V4/" class="btn">Jugar V4</a>
+    </div>
+  </div>
+
+</body>
+</html>
