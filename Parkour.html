@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Parkour</title>
+  <style>
+    :root {
+      --bg: #10151c;
+      --fg: #e8edf2;
+      --mu: #8d9aa8;
+      --ac: #ff8a2a;
+      --bd: #2c3745;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px)
+    }
+
+    html {
+      height: 100%;
+      scroll-padding-top: env(safe-area-inset-top, 0px)
+    }
+
+    body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+      color: var(--fg);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      overflow: hidden
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%
+    }
+
+    #hud {
+      position: fixed;
+      left: 16px;
+      top: calc(12px + env(safe-area-inset-top, 0px));
+      font: 600 15px/1.5 "Trebuchet MS", sans-serif;
+      text-shadow: 0 1px 4px #000a;
+      pointer-events: none
+    }
+
+    #h2 {
+      font-size: 22px
+    }
+
+    #ch {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: 4px;
+      height: 4px;
+      margin: -2px;
+      border-radius: 50%;
+      background: #fff9;
+      pointer-events: none
+    }
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      top: 18%;
+      transform: translateX(-50%);
+      padding: 8px 18px;
+      background: #000a;
+      border-radius: 6px;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none
+    }
+
+    #toast.on {
+      opacity: 1
+    }
+
+    #fl {
+      position: fixed;
+      inset: 0;
+      background: #d1280a;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .6s
+    }
+
+    #menu {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 11, 16, .72);
+      backdrop-filter: blur(5px);
+      overflow: auto
+    }
+
+    #pn {
+      width: min(680px, 94%);
+      max-height: 94%;
+      overflow: auto;
+      background: var(--bg);
+      border: 1px solid var(--bd);
+      border-radius: 10px;
+      padding: 22px 26px
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      letter-spacing: .5px
+    }
+
+    h2 {
+      margin: 6px 0
+    }
+
+    .s {
+      color: var(--mu);
+      font-size: 14px;
+      margin: 4px 0 14px
+    }
+
+    #msg {
+      margin-bottom: 12px
+    }
+
+    button {
+      font: inherit;
+      color: var(--fg);
+      background: #1a2330;
+      border: 1px solid var(--bd);
+      border-radius: 6px;
+      padding: 9px 14px;
+      cursor: pointer
+    }
+
+    button:hover,
+    button:focus-visible {
+      border-color: var(--ac);
+      outline: none
+    }
+
+    button.on {
+      background: var(--ac);
+      color: #1a0d00;
+      border-color: var(--ac);
+      font-weight: 700
+    }
+
+    #ds {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px
+    }
+
+    #gr {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px
+    }
+
+    #gr button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-weight: 700
+    }
+
+    small {
+      font-weight: 400;
+      color: var(--mu);
+      font-size: 11px
+    }
+
+    #cont {
+      background: var(--ac);
+      color: #1a0d00;
+      font-weight: 700;
+      margin-bottom: 12px
+    }
+
+    #home {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(#10151ccc, #10151cf2)
+    }
+
+    #hp {
+      text-align: center;
+      padding: 0 16px
+    }
+
+    #hp h1 {
+      font-size: clamp(40px, 9vw, 84px)
+    }
+
+    #hb {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 18px 0
+    }
+
+    #hb button {
+      font-size: 20px;
+      padding: 12px 26px
+    }
+
+    #hd {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap
+    }
+
+    #gr button:disabled {
+      opacity: .4;
+      cursor: not-allowed
+    }
+  </style>
+</head>
+
+<body>
+  <div id="hud">
+    <div id="h1"></div>
+    <div id="h2"></div>
+  </div>
+  <div id="ch"></div>
+  <div id="toast"></div>
+  <div id="fl"></div>
+  <div id="home">
+    <div id="hp">
+      <h1>Parkour</h1>
+      <p class="s">Parkour 3D en primera persona. 4 dificultades, 30 niveles cada una.</p>
+      <div id="hb"><button class="on" onclick="play()">Jugar</button><button onclick="levels()">Seleccionar
+          nivel</button></div>
+      <div id="hd"></div>
+    </div>
+  </div>
+  <div id="menu">
+    <div id="pn">
+      <h1>Parkour</h1>
+      <p class="s">Elige dificultad y nivel. Para desbloquear un nivel hay que completar el anterior.</p>
+      <div id="msg"></div><button id="cont">Continuar</button> <button onclick="home()" style="margin-bottom:12px">Menú
+        de inicio</button>
+      <div id="ds"></div>
+      <div id="gr"></div>
+      <p class="s">W A S D mover · Shift correr · Espacio saltar (mantén para saltar más alto) · R volver al último
+        checkpoint · Esc pausa. Si el ratón no se bloquea, arrastra para mirar. Llega a la plataforma verde sin caer a
+        la lava.</p>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    const $ = id => document.getElementById(id), DN = ['Fácil', 'Normal', 'Difícil', 'Extremo'], NL = 30;
+    let diff = 0, lvl = 1, state = 'menu', boxes = [], G, spawn = new THREE.Vector3(), lowest = 0, time = 0, falls = 0, clk = 0, bob = 0, dip = 0, cpb = null, lnd = null, drag = false, best = {}, keys = {};
+    try {best = JSON.parse(localStorage.getItem('sk3d') || '{}')} catch (e) { }
+    const save = () => {try {localStorage.setItem('sk3d', JSON.stringify(best))} catch (e) { } };
+    const ok = l => l <= 1 || !!best[diff + '-' + (l - 1)], nxt = () => {for (let l = 1; l <= NL; l++)if (!best[diff + '-' + l]) return l; return NL};
+    const fmt = t => Math.floor(t / 60) + ':' + (t % 60).toFixed(1).padStart(4, '0');
+    function rng(a) {return () => {a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296}}
+    // ---------- render ----------
+    const R = new THREE.WebGLRenderer({antialias: true}); R.setPixelRatio(Math.min(devicePixelRatio, 2)); R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.outputEncoding = THREE.sRGBEncoding; R.toneMapping = THREE.ACESFilmicToneMapping; document.body.prepend(R.domElement);
+    const S = new THREE.Scene(), C = new THREE.PerspectiveCamera(72, 1, .1, 400);
+    {const c = document.createElement('canvas'); c.width = 2; c.height = 256; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#2f68a8'); gr.addColorStop(.7, '#a9c8e6'); gr.addColorStop(1, '#e6dccb'); g.fillStyle = gr; g.fillRect(0, 0, 2, 256); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; S.background = t}
+    S.fog = new THREE.Fog(0xcfd9e2, 40, 270);
+    S.add(new THREE.HemisphereLight(0xcfe3ff, 0x4a4038, .95));
+    const sun = new THREE.DirectionalLight(0xfff0d8, 1.5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); const sc = sun.shadow.camera; sc.left = sc.bottom = -45; sc.right = sc.top = 45; sc.far = 260; sun.shadow.bias = -.0004; sun.shadow.normalBias = .05; S.add(sun, sun.target);
+    // ---------- texturas procedurales ----------
+    function mk(fn) {const c = document.createElement('canvas'); c.width = c.height = 256; fn(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.encoding = THREE.sRGBEncoding; return t}
+    function speck(g, n, a) {for (let i = 0; i < n; i++) {g.fillStyle = Math.random() < .5 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${a})`; g.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 3, 1 + Math.random() * 3)} }
+    const tC = mk(g => {g.fillStyle = '#868a8d'; g.fillRect(0, 0, 256, 256); speck(g, 6000, .09); g.strokeStyle = 'rgba(0,0,0,.4)'; g.lineWidth = 4; g.strokeRect(0, 0, 256, 256)});
+    const tM = mk(g => {g.fillStyle = '#d9731f'; g.fillRect(0, 0, 256, 256); g.fillStyle = '#1e1e1e'; for (let i = -256; i < 512; i += 64) {g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 32, 0); g.lineTo(i - 224, 256); g.lineTo(i - 256, 256); g.fill()} speck(g, 2500, .1)});
+    const tK = mk(g => {g.fillStyle = '#b39466'; g.fillRect(0, 0, 256, 256); speck(g, 5000, .1); g.strokeStyle = 'rgba(60,40,20,.6)'; for (let i = 0; i < 14; i++) {g.beginPath(); let x = Math.random() * 256, y = Math.random() * 256; g.moveTo(x, y); for (let j = 0; j < 5; j++)g.lineTo(x += Math.random() * 40 - 20, y += Math.random() * 40 - 20); g.stroke()} });
+    const tL = mk(g => {g.fillStyle = '#3a0d00'; g.fillRect(0, 0, 256, 256); for (let i = 0; i < 70; i++) {const x = Math.random() * 256, y = Math.random() * 256, r = 10 + Math.random() * 30, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,170,40,.9)'); gr.addColorStop(1, 'rgba(255,60,0,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r)} });
+    tL.repeat.set(160, 160);
+    const M = (o) => new THREE.MeshStandardMaterial(o), mat = {s: M({map: tC, roughness: .92}), m: M({map: tM, roughness: .45, metalness: .35}), k: M({map: tK, roughness: 1}), c: M({map: tC, color: 0x58a8ff, emissive: 0x0b3a80, roughness: .6}), g: M({map: tC, color: 0x5cff95, emissive: 0x0a8a38, roughness: .6})};
+    const lava = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), M({map: tL, emissiveMap: tL, emissive: 0xff5a14, roughness: .7})); lava.rotation.x = -Math.PI / 2; S.add(lava);
+    function box(w, h, d, m) {const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv, s = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]]; for (let i = 0; i < 24; i++) {const f = i >> 2; uv.setXY(i, uv.getX(i) * s[f][0] / 3, uv.getY(i) * s[f][1] / 3)} return new THREE.Mesh(g, m)}
+    // ---------- generación de niveles ----------
+    function build() {
+      if (G) S.remove(G); G = new THREE.Group(); S.add(G); boxes = []; cpb = null;
+      const r = rng(lvl * 977 + diff * 131 + 7), t = (lvl - 1) / (NL - 1), n = 9 + Math.floor(lvl * 1.1) + diff * 3; let x = 0, y = 0, z = 0, ang = 0, pw = 7;
+      const add = (x, y, z, w, d, ty) => {const b = {x, y, z, hx: w / 2, hy: .6, hz: d / 2, ty, on: true, ox: x, oy: y, oz: z, dx: 0, dy: 0, dz: 0, t0: 0}, m = box(w, 1.2, d, mat[ty]); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; G.add(m); b.m = m; boxes.push(b); return b};
+      add(0, 0, 0, 7, 7, 's');
+      for (let i = 1; i <= n; i++) {
+        const last = i === n, cp = !last && i % 7 === 0;
+        ang = Math.max(-1, Math.min(1, ang + (r() - .5) * (.7 + .25 * diff)));
+        const dy = Math.min(1.1, (r() - .5) * (1 + t * 1.2)), w = last ? 7 : cp ? 5 : Math.max(1.7, 4.4 - 3 * t - .35 * diff + r() * .8);
+        let ty = last ? 'g' : cp ? 'c' : 's';
+        if (ty === 's') {const q = r(); if (lvl >= 4 && q < .15 + .15 * t) ty = 'm'; else if (lvl >= 8 && q < .38) ty = 'k'}
+        let gap = 1.6 + t * 2.3 + diff * .45 + r() * .8 - Math.max(0, dy) * 1.3; if (ty === 'm' || last || cp) gap = Math.min(gap, 3.2); gap = Math.max(1, Math.min(gap, 5.1));
+        const d = pw / 2 + gap + w / 2; x += Math.sin(ang) * d; z -= Math.cos(ang) * d; y += dy;
+        const b = add(x, y, z, w, w, ty);
+        if (ty === 'm') {const v = r() < .3; b.mv = {ax: v ? [0, 1, 0] : [Math.cos(ang), 0, Math.sin(ang)], amp: v ? 1.2 : 2 + r() * 1.2, sp: .6 + r() * .6 + t * .4, ph: r() * 6.28}}
+        pw = w
+      }
+      lowest = Math.min(...boxes.map(b => b.y)) - .6; lava.position.y = lowest - 8.3;
+      for (let i = 0; i < 70; i++) {
+        const b = boxes[(r() * boxes.length) | 0], a = r() * 6.28, dd = 16 + r() * 45, px = b.x + Math.cos(a) * dd, pz = b.z + Math.sin(a) * dd; if (boxes.some(q => Math.hypot(q.x - px, q.z - pz) < 14)) continue;
+        const w = 4 + r() * 9, h = b.y + (r() - .6) * 32 - (lowest - 8.3); if (h < 4) continue; const m = box(w, h, w, mat.s); m.position.set(px, lowest - 8.3 + h / 2, pz); m.castShadow = m.receiveShadow = true; G.add(m)
+      }
+      const g = boxes[boxes.length - 1], bm = new THREE.Mesh(new THREE.CylinderGeometry(.7, .7, 70, 16, 1, true), new THREE.MeshBasicMaterial({color: 0x33ff88, transparent: true, opacity: .22, depthWrite: false, side: THREE.DoubleSide})); bm.position.set(g.x, g.y + 35, g.z); G.add(bm);
+      spawn.set(0, .62, 0); P.yaw = Math.atan2(-boxes[1].x, -boxes[1].z); P.pitch = -.1; respawn()
+    }
+    // ---------- jugador ----------
+    const P = {p: new THREE.Vector3(), v: new THREE.Vector3(), yaw: 0, pitch: 0, ground: null, coy: 0, buf: 0, r: .35, h: 1.75};
+    function respawn() {P.p.copy(spawn); P.v.set(0, 0, 0); P.ground = null; boxes.forEach(b => {b.t0 = 0; b.on = true; b.m.visible = true})}
+    function mv(ax, d) {
+      P.p[ax] += d; for (const b of boxes) {
+        if (!b.on) continue;
+        if (Math.abs(P.p.x - b.x) < b.hx + P.r && Math.abs(P.p.z - b.z) < b.hz + P.r && P.p.y < b.y + b.hy && P.p.y + P.h > b.y - b.hy) {
+          const top = b.y + b.hy;
+          if (ax === 'y') {if (d < 0) {P.p.y = top; P.v.y = 0; lnd = b} else {P.p.y = b.y - b.hy - P.h; P.v.y = 0} }
+          else {if (top - P.p.y < .45) {P.p.y = top; continue} P[ax === 'x' ? 'v' : 'v'][ax] = 0; P.p[ax] = d > 0 ? b[ax] - b['h' + ax] - P.r : b[ax] + b['h' + ax] + P.r}
+        }
+      }
+    }
+    function plat() {
+      for (const b of boxes) {
+        const ox = b.x, oy = b.y, oz = b.z;
+        if (b.mv) {const s = Math.sin(clk * b.mv.sp + b.mv.ph) * b.mv.amp; b.x = b.ox + b.mv.ax[0] * s; b.y = b.oy + b.mv.ax[1] * s; b.z = b.oz + b.mv.ax[2] * s}
+        b.dx = b.x - ox; b.dy = b.y - oy; b.dz = b.z - oz; let sh = 0;
+        if (b.ty === 'k' && b.t0) {const e = clk - b.t0; if (e < .7) sh = (Math.random() - .5) * .1; else if (e < 3.5) {if (b.on) {b.on = false; b.m.visible = false} } else {b.on = true; b.m.visible = true; b.t0 = 0} }
+        b.m.position.set(b.x + sh, b.y, b.z)
+      }
+    }
+    function step(dt) {
+      const g = P.ground; if (g && g.on) P.p.set(P.p.x + g.dx, P.p.y + g.dy, P.p.z + g.dz);
+      const f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), s = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
+      let wx = -Math.sin(P.yaw) * f + Math.cos(P.yaw) * s, wz = -Math.cos(P.yaw) * f - Math.sin(P.yaw) * s; const l = Math.hypot(wx, wz); if (l > 1) {wx /= l; wz /= l}
+      const sp = (keys.ShiftLeft || keys.ShiftRight) ? 9 : 5.5, ac = P.ground ? 55 : 16, dvx = wx * sp - P.v.x, dvz = wz * sp - P.v.z, dl = Math.hypot(dvx, dvz), m = Math.min(dl, ac * dt);
+      if (dl > 0) {P.v.x += dvx / dl * m; P.v.z += dvz / dl * m}
+      P.coy = P.ground ? .1 : P.coy - dt; P.buf -= dt;
+      if (P.buf > 0 && P.coy > 0) {P.v.y = 9.2; P.buf = P.coy = 0; P.ground = null}
+      P.v.y = Math.max(-50, P.v.y - 24 * dt); if (!keys.Space && P.v.y > 3) P.v.y -= 40 * dt;
+      const was = !!P.ground, vy = P.v.y; lnd = null; mv('x', P.v.x * dt); mv('z', P.v.z * dt); mv('y', P.v.y * dt); P.ground = lnd;
+      if (lnd) {
+        if (!was && vy < -6) dip = Math.min(.3, -vy * .012); if (lnd.ty === 'k' && !lnd.t0) lnd.t0 = clk;
+        if (lnd.ty === 'c' && cpb !== lnd) {cpb = lnd; spawn.set(lnd.x, lnd.y + .62, lnd.z); toast('Checkpoint guardado')}
+        if (lnd.ty === 'g') return win()
+      }
+      if (P.p.y < lowest - 8) {falls++; $('fl').style.transition = 'none'; $('fl').style.opacity = .85; requestAnimationFrame(() => {$('fl').style.transition = 'opacity .6s'; $('fl').style.opacity = 0}); respawn()}
+      const spd = Math.hypot(P.v.x, P.v.z); if (P.ground && spd > 1) bob += dt * spd * 1.3; dip *= Math.max(0, 1 - 8 * dt);
+      C.position.set(P.p.x, P.p.y + 1.62 + Math.sin(bob * 2) * .035 * Math.min(1, spd / 5) - dip, P.p.z); C.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
+      C.fov += (72 + spd * 1.3 - C.fov) * Math.min(1, 6 * dt); C.updateProjectionMatrix();
+      sun.position.set(P.p.x + 50, P.p.y + 90, P.p.z + 30); sun.target.position.copy(P.p);
+      $('h1').textContent = DN[diff] + ' · Nivel ' + lvl + '/' + NL; $('h2').textContent = fmt(time) + '   Caídas ' + falls
+    }
+    // ---------- flujo ----------
+    let tt; function toast(s) {const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => e.classList.remove('on'), 1600)}
+    function start(l) {l = Math.max(1, Math.min(NL, l)); if (!ok(l)) {toast('Completa el nivel anterior'); return } lvl = l; $('home').style.display = 'none'; build(); time = 0; falls = 0; $('menu').style.display = 'none'; state = 'play'; if (R.domElement.requestPointerLock) try {R.domElement.requestPointerLock()} catch (e) { } }
+    function win() {
+      const k = diff + '-' + lvl; if (!best[k] || time < best[k]) {best[k] = time; save()}
+      menu('<h2>Nivel ' + lvl + ' completado</h2>Tiempo ' + fmt(time) + ' · Caídas ' + falls + '<br><br>' + (lvl < NL ? '<button class="on" onclick="start(' + (lvl + 1) + ')">Siguiente nivel</button>' : 'Has terminado todos los niveles de ' + DN[diff] + '.'))
+    }
+    function menu(msg, pz) {
+      state = 'menu'; if (document.pointerLockElement) document.exitPointerLock(); $('menu').style.display = 'flex'; $('msg').innerHTML = msg || ''; $('cont').style.display = pz ? 'inline-block' : 'none';
+      $('ds').innerHTML = ''; DN.forEach((n, i) => {const b = document.createElement('button'); b.textContent = n; b.className = i === diff ? 'on' : ''; b.onclick = () => {diff = i; menu(msg, pz)}; $('ds').appendChild(b)});
+      $('gr').innerHTML = ''; for (let l = 1; l <= NL; l++) {const k = diff + '-' + l, b = document.createElement('button'); b.innerHTML = l + (best[k] ? '<small>' + fmt(best[k]) + '</small>' : ''); b.onclick = () => start(l); if (!ok(l)) {b.disabled = true; b.innerHTML = l + '<small>bloqueado</small>'} $('gr').appendChild(b)}
+    }
+    $('cont').onclick = () => {$('menu').style.display = 'none'; state = 'play'; try {R.domElement.requestPointerLock()} catch (e) { } };
+    document.addEventListener('pointerlockchange', () => {if (!document.pointerLockElement && state === 'play') menu('<h2>Pausa</h2>', true)});
+    addEventListener('keydown', e => {keys[e.code] = true; if (e.code === 'Space') {P.buf = .12; e.preventDefault()} if (e.code === 'KeyR' && state === 'play') respawn(); if (e.code === 'Escape' && state === 'play') menu('<h2>Pausa</h2>', true)});
+    addEventListener('keyup', e => keys[e.code] = false); addEventListener('blur', () => keys = {});
+    addEventListener('mousedown', () => drag = true); addEventListener('mouseup', () => drag = false);
+    addEventListener('mousemove', e => {if (state !== 'play' || !(document.pointerLockElement || drag)) return; P.yaw -= e.movementX * .0022; P.pitch = Math.max(-1.5, Math.min(1.5, P.pitch - e.movementY * .0022))});
+    function rs() {R.setSize(innerWidth, innerHeight); C.aspect = innerWidth / innerHeight; C.updateProjectionMatrix()} addEventListener('resize', rs); rs();
+    let last = performance.now();
+    function loop(now) {
+      requestAnimationFrame(loop); const dt = Math.min(.05, (now - last) / 1000); last = now;
+      if (state === 'play') {clk += dt; time += dt; plat(); step(dt)} else {C.position.set(P.p.x, P.p.y + 6, P.p.z + 9); C.lookAt(P.p.x, P.p.y, P.p.z - 20)}
+      tL.offset.set(clk * .01, clk * .007); R.render(S, C)
+    }
+    function home() {state = 'menu'; if (document.pointerLockElement) document.exitPointerLock(); $('menu').style.display = 'none'; $('home').style.display = 'flex'; $('hd').innerHTML = ''; DN.forEach((n, i) => {const b = document.createElement('button'); b.textContent = n; b.className = i === diff ? 'on' : ''; b.onclick = () => {diff = i; home()}; $('hd').appendChild(b)})}
+    function play() {start(nxt())} function levels() {$('home').style.display = 'none'; menu()}
+    build(); home(); requestAnimationFrame(loop);
+  </script>
+</body>
+
+</html>
