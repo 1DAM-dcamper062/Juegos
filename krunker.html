@@ -212,7 +212,7 @@
     </div>
     <div id="menu" class="scr">
         <h1>Krunker</h1>
-        <p class="sub">SHOOTER TÁCTICO 3D</p><button onclick="show('lv')">JUGAR</button><button
+        <p class="sub">A MATAR</p><button onclick="show('lv')">JUGAR</button><button
             onclick="show('ctl')">CONTROLES</button>
     </div>
     <div id="lv" class="scr hid">
@@ -342,6 +342,175 @@
         }
         let last = performance.now(); (function loop(t) {requestAnimationFrame(loop); const dt = Math.min((t - last) / 1000, .05); last = t; if (G.state === 'play') update(dt); R.render(S, cam)})(last);
         show('menu');
+    </script>
+
+    <style>
+        #pie-david {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            padding: 4px 10px calc(4px + env(safe-area-inset-bottom, 0px));
+            background: rgba(0, 0, 0, .55);
+            color: #cfd6dd;
+            font: 12px/1.4 system-ui, sans-serif;
+            pointer-events: none
+        }
+
+        #pie-david a {
+            color: #7fb8ff;
+            text-decoration: none;
+            font-weight: 600;
+            pointer-events: auto
+        }
+
+        #pie-david a:hover {
+            text-decoration: underline
+        }
+    </style>
+    <footer id="pie-david"><span>Creado por David Camacho</span><span>·</span><a
+            href="https://1dam-dcamper062.github.io/Juegos/">&larr; Volver al inicio</a></footer>
+    <script>
+        /* ===== Controles táctiles (joystick flotante + botones) ===== */
+        (function () {
+            function TouchUI(o) {
+                let on = matchMedia('(pointer:coarse)').matches, built = false, shown = false;
+                let tc, zone, ui, bs, ks, ba, ka, hint;
+                const st = {s: null, a: null, l: null}, pressed = new Set();
+                const rad = () => Math.min(innerWidth, innerHeight) * .13;
+                const mk = (p, c, h) => {const e = document.createElement('div'); e.className = c; if (h) e.innerHTML = h; p.appendChild(e); return e};
+                const vec = (s, t) => {
+                    const R = rad(); let dx = t.clientX - s.ox, dy = t.clientY - s.oy; const d = Math.hypot(dx, dy);
+                    if (d > R) {dx *= R / d; dy *= R / d}
+                    let m = Math.min(1, d / R); if (m < .12) return {x: 0, y: 0, m: 0, dx, dy};
+                    return {x: dx / R, y: dy / R, m, dx, dy};
+                };
+                const place = (base, knob, x, y) => {base.style.left = x + 'px'; base.style.top = y + 'px'; base.style.display = 'block'; knob.style.transform = 'translate(0,0)'};
+                const hide = (base, knob) => {base.style.display = 'none'; knob.style.transform = 'translate(0,0)'};
+
+                function build() {
+                    built = true;
+                    const css = document.createElement('style');
+                    css.textContent = `
+body{touch-action:manipulation}
+.tc{position:fixed;inset:0;z-index:60;display:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;font-family:system-ui,Arial,sans-serif}
+.tc.on{display:block}
+.tcz{position:absolute;inset:0;touch-action:none}
+.tcu{position:absolute;inset:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);pointer-events:none}
+.tcb{position:absolute;display:none;width:26vmin;height:26vmin;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.08);transform:translate(-50%,-50%);pointer-events:none}
+.tck{position:absolute;left:50%;top:50%;width:11vmin;height:11vmin;margin:-5.5vmin 0 0 -5.5vmin;border-radius:50%;background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.7)}
+.tcbtn{position:absolute;pointer-events:auto;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(0,0,0,.4);border:2px solid rgba(255,255,255,.55);color:#fff;font-weight:700;letter-spacing:.03em;touch-action:none;box-sizing:border-box;text-shadow:0 1px 3px #000;text-align:center;line-height:1}
+.tcbtn.pill{border-radius:99px}
+.tcbtn.p{background:rgba(255,255,255,.4);transform:scale(.93)}
+.tchint{position:fixed;left:8%;right:8%;top:36%;display:none;text-align:center;padding:14px;border-radius:10px;background:rgba(0,0,0,.65);color:#fff;font:600 16px/1.4 system-ui,sans-serif;pointer-events:none}`;
+                    document.head.appendChild(css);
+                    tc = mk(document.body, 'tc'); zone = mk(tc, 'tcz');
+                    bs = mk(tc, 'tcb'); ks = mk(bs, 'tck'); ba = mk(tc, 'tcb'); ka = mk(ba, 'tck');
+                    ui = mk(tc, 'tcu');
+                    hint = mk(tc, 'tchint', '📱 Gira el móvil en horizontal para jugar mejor');
+
+                    zone.addEventListener('touchstart', e => {
+                        e.preventDefault();
+                        for (const t of e.changedTouches) {
+                            const left = t.clientX < innerWidth / 2;
+                            const R = rad(), ox = Math.max(R + 6, Math.min(innerWidth - R - 6, t.clientX)), oy = Math.max(R + 6, Math.min(innerHeight - R - 30, t.clientY));
+                            if (left) {
+                                if (!st.s) {st.s = {id: t.identifier, ox, oy}; place(bs, ks, ox, oy); o.stick && o.stick(0, 0, 0)}
+                            } else if (o.aim) {
+                                if (!st.a) {st.a = {id: t.identifier, ox, oy}; place(ba, ka, ox, oy); o.aim(0, 0, 0, true)}
+                            } else if (!st.l) st.l = {id: t.identifier, lx: t.clientX, ly: t.clientY};
+                        }
+                    }, {passive: false});
+
+                    zone.addEventListener('touchmove', e => {
+                        e.preventDefault();
+                        for (const t of e.changedTouches) {
+                            if (st.s && t.identifier === st.s.id) {const v = vec(st.s, t); ks.style.transform = `translate(${v.dx}px,${v.dy}px)`; o.stick && o.stick(v.x, v.y, v.m)}
+                            else if (st.a && t.identifier === st.a.id) {const v = vec(st.a, t); ka.style.transform = `translate(${v.dx}px,${v.dy}px)`; o.aim(v.x, v.y, v.m, true)}
+                            else if (st.l && t.identifier === st.l.id) {o.look && o.look(t.clientX - st.l.lx, t.clientY - st.l.ly); st.l.lx = t.clientX; st.l.ly = t.clientY}
+                        }
+                    }, {passive: false});
+
+                    const end = e => {
+                        e.preventDefault();
+                        for (const t of e.changedTouches) {
+                            if (st.s && t.identifier === st.s.id) {st.s = null; hide(bs, ks); o.stick && o.stick(0, 0, 0)}
+                            else if (st.a && t.identifier === st.a.id) {st.a = null; hide(ba, ka); o.aim(0, 0, 0, false)}
+                            else if (st.l && t.identifier === st.l.id) st.l = null;
+                        }
+                    };
+                    zone.addEventListener('touchend', end, {passive: false}); zone.addEventListener('touchcancel', end, {passive: false});
+
+                    (o.buttons || []).forEach(b => {
+                        const s = b.size, fs = b.fs || s * .34;
+                        const e = mk(ui, 'tcbtn' + (b.pill ? ' pill' : ''), b.txt); b._e = e;
+                        e.style.cssText = b.pos + ';' + (b.pill
+                            ? `height:${s}vmin;min-width:${s}vmin;padding:0 ${s * .3}vmin;font-size:${fs}vmin`
+                            : `width:${s}vmin;height:${s}vmin;font-size:${fs}vmin`);
+                        let id = null;
+                        e.addEventListener('touchstart', ev => {
+                            ev.preventDefault(); if (id !== null) return; id = ev.changedTouches[0].identifier; e.classList.add('p');
+                            b.down && b.down(); if (b.up) pressed.add(b);
+                        }, {passive: false});
+                        const rel = ev => {
+                            ev.preventDefault();
+                            for (const t of ev.changedTouches) if (t.identifier === id) {id = null; e.classList.remove('p'); if (pressed.delete(b)) b.up && b.up()}
+                        };
+                        e.addEventListener('touchend', rel, {passive: false}); e.addEventListener('touchcancel', rel, {passive: false});
+                    });
+                    window.__touch = true;
+                    o.onEnable && o.onEnable();
+                }
+
+                function releaseAll() {
+                    st.s = st.a = st.l = null; hide(bs, ks); hide(ba, ka);
+                    o.stick && o.stick(0, 0, 0); o.aim && o.aim(0, 0, 0, false);
+                    pressed.forEach(b => {b._e.classList.remove('p'); b.up && b.up()}); pressed.clear();
+                    (o.buttons || []).forEach(b => b._e && b._e.classList.remove('p'));
+                }
+
+                addEventListener('touchstart', () => {on = true}, {once: true, passive: true});
+                (function tick() {
+                    requestAnimationFrame(tick); if (!on) return; if (!built) build();
+                    const a = !!o.active();
+                    if (a !== shown) {shown = a; tc.classList.toggle('on', a); if (!a) releaseAll()}
+                    if (shown) hint.style.display = innerHeight > innerWidth ? 'block' : 'none';
+                })();
+            }
+            window.TouchUI = TouchUI;
+        })();
+
+        /* ===== Controles táctiles: Krunker ===== */
+        /* En móvil no existe Pointer Lock: lo dejamos como "no-op" para que el juego no falle */
+        if (!HTMLElement.prototype.requestPointerLock) HTMLElement.prototype.requestPointerLock = function () { };
+        if (!document.exitPointerLock) document.exitPointerLock = function () { };
+        /* iOS/Android: desbloquear el audio con el primer toque */
+        ['touchend', 'click'].forEach(ev => addEventListener(ev, () => {try {AC = AC || new AudioContext(); if (AC.state === 'suspended') AC.resume()} catch (e) { } }, {passive: true}));
+        (function () {
+            const wb = [0, 1, 2, 3].map(i => ({txt: String(i + 1), pill: 1, size: 9, pos: `left:calc(50% - 20vmin + ${i * 10}vmin);top:14vmin`, down() {if (G.state === 'play') sw(i)} }));
+            TouchUI({
+                active: () => G.state === 'play',
+                stick: (x, y, m) => {k.KeyD = x > .35; k.KeyA = x < -.35; k.KeyS = y > .35; k.KeyW = y < -.35; k.ShiftLeft = m > .9},
+                look: (dx, dy) => {const s = .0055 * (ads ? (W().zoom ? .25 : .6) : 1); yaw -= dx * s; pitch = clamp(pitch - dy * s, -1.5, 1.5)},
+                buttons: [
+                    {txt: 'FUEGO', size: 21, fs: 4.2, pos: 'right:5vmin;bottom:26vmin', down() {fire = true; if (!W().auto) shoot()}, up() {fire = false} },
+                    {txt: 'SALTO', size: 15, fs: 3.4, pos: 'right:28vmin;bottom:26vmin', down() {k.Space = true}, up() {k.Space = false} },
+                    {txt: 'MIRA', size: 13, fs: 3, pos: 'right:6vmin;bottom:50vmin', down() {ads = !ads} },
+                    {txt: 'R', size: 12, fs: 4.5, pos: 'right:23vmin;bottom:46vmin', down() {if (G.state === 'play') reload()} },
+                    {txt: 'II', pill: 1, size: 8, pos: 'right:2vmin;top:2vmin', down() {if (G.state === 'play') {G.state = 'pause'; fire = false; show('pause')} } }
+                ].concat(wb),
+                onEnable() {
+                    const c = document.querySelector('#ctl .ctl');
+                    if (c) c.innerHTML = 'Joystick izquierdo mover (al borde = correr)<br>Arrastra la mitad derecha para apuntar<br>FUEGO · SALTO · MIRA (zoom) · R recargar<br>1-4 cambiar arma · II pausa';
+                }
+            });
+        })();
+
     </script>
 </body>
 
