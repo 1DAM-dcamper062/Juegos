@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>Moto 3D</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      font-family: system-ui, Arial, sans-serif;
+      color: #fff;
+      touch-action: none
+    }
+
+    canvas {
+      display: block
+    }
+
+    #menu {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow: auto;
+      touch-action: pan-y;
+      padding: 10px 10px 40px
+    }
+
+    #mn {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(8, 12, 24, .88);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin: auto
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 26px;
+      text-align: center;
+      color: #ffd33d
+    }
+
+    h3 {
+      margin: 12px 0 6px;
+      font-size: 13px;
+      color: #8fb4ff;
+      text-transform: uppercase;
+      letter-spacing: 1px
+    }
+
+    .m {
+      text-align: center;
+      background: #1d3a66;
+      border-radius: 8px;
+      padding: 8px;
+      margin: 6px 0
+    }
+
+    .c {
+      text-align: center;
+      font-size: 18px;
+      margin: 4px 0
+    }
+
+    .r {
+      display: flex;
+      gap: 6px;
+      align-items: center
+    }
+
+    .r>* {
+      flex: 1
+    }
+
+    .r2 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0
+    }
+
+    .g {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px
+    }
+
+    .b {
+      background: #26324d;
+      color: #fff;
+      border: 2px solid #3b4a70;
+      border-radius: 10px;
+      padding: 9px 6px;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: 600
+    }
+
+    .b small {
+      display: block;
+      font-size: 10px;
+      font-weight: 400;
+      opacity: .8
+    }
+
+    .b.on {
+      border-color: #ffd33d;
+      background: #3a4a1a
+    }
+
+    .b:disabled {
+      opacity: .4
+    }
+
+    .big {
+      width: 100%;
+      margin-top: 8px;
+      padding: 12px;
+      font-size: 17px
+    }
+
+    .go {
+      background: #e8352b;
+      border-color: #ff7a70;
+      font-size: 20px
+    }
+
+    .st {
+      font-size: 12px;
+      flex: 3 !important
+    }
+
+    .bar {
+      display: inline-block;
+      width: 80px;
+      height: 7px;
+      background: #333;
+      border-radius: 4px;
+      vertical-align: middle;
+      margin-left: 6px;
+      overflow: hidden
+    }
+
+    .bar b {
+      display: block;
+      height: 100%;
+      background: #4ade80
+    }
+
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: none
+    }
+
+    #hud button {
+      pointer-events: auto
+    }
+
+    #top {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      right: 104px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 18px;
+      text-shadow: 0 2px 4px #000
+    }
+
+    #pr,
+    #en {
+      position: absolute;
+      left: 12px;
+      right: 104px;
+      background: #0006;
+      border-radius: 5px;
+      overflow: hidden
+    }
+
+    #pr {
+      top: 42px;
+      height: 8px
+    }
+
+    #en {
+      top: 56px;
+      height: 6px
+    }
+
+    #pr i,
+    #en i {
+      display: block;
+      height: 100%
+    }
+
+    #pr i {
+      background: #ffd33d;
+      width: 0
+    }
+
+    #en i {
+      background: #38bdf8;
+      width: 100%
+    }
+
+    #mu {
+      position: absolute;
+      top: 8px;
+      right: 56px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 0;
+      background: #0007;
+      color: #fff;
+      font-size: 18px
+    }
+
+    #pa {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 0;
+      background: #0007;
+      color: #fff;
+      font-size: 18px
+    }
+
+    .t {
+      position: absolute;
+      bottom: calc(36px + env(safe-area-inset-bottom, 0px));
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 3px solid #fff8;
+      background: #0005;
+      color: #fff;
+      font-size: 30px;
+      display: none
+    }
+
+    @media(pointer:coarse) {
+      .t {
+        display: block
+      }
+    }
+
+    #bk {
+      left: 8px;
+      bottom: calc(118px + env(safe-area-inset-bottom, 0px))
+    }
+
+    #bl {
+      left: 8px
+    }
+
+    #br {
+      left: 90px
+    }
+
+    #bj {
+      right: 8px
+    }
+
+    #bt {
+      right: 90px
+    }
+
+    #bn {
+      position: absolute;
+      top: 28%;
+      width: 100%;
+      text-align: center;
+      font-size: 30px;
+      font-weight: 800;
+      text-shadow: 0 3px 8px #000;
+      transition: opacity .6s
+    }
+
+    #ps {
+      position: fixed;
+      inset: 0;
+      background: #000a;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px
+    }
+
+    #ps .b {
+      width: 220px
+    }
+
+    #help {
+      font-size: 11px;
+      opacity: .7;
+      text-align: center;
+      margin-top: 8px
+    }
+
+    .g5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      max-height: 150px;
+      overflow-y: auto;
+      touch-action: pan-y
+    }
+
+    .g5 .b {
+      padding: 8px 2px;
+      font-size: 14px
+    }
+
+    #wc {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%
+    }
+
+    #fl {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(transparent 45%, rgba(255, 0, 0, .8));
+      opacity: 0
+    }
+
+    .tt {
+      font-size: 34px;
+      margin: 6px 0
+    }
+
+    .sub {
+      text-align: center;
+      opacity: .8;
+      margin: 0 0 8px
+    }
+
+    .sg {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px
+    }
+
+    .sc {
+      border: 2px solid #3b4a70;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 700;
+      padding: 12px 4px;
+      font-size: 13px;
+      text-shadow: 0 1px 4px #000;
+      cursor: pointer
+    }
+
+    .sc span {
+      display: block;
+      font-size: 26px
+    }
+
+    .sc.on {
+      border-color: #ffd33d;
+      box-shadow: 0 0 0 2px #ffd33d
+    }
+
+    #pie-david {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 99999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      padding: 4px 10px calc(4px + env(safe-area-inset-bottom, 0px));
+      background: rgba(0, 0, 0, .55);
+      color: #cfd6dd;
+      font: 12px/1.4 system-ui, sans-serif;
+      pointer-events: none
+    }
+
+    #pie-david a {
+      color: #7fb8ff;
+      text-decoration: none;
+      font-weight: 600;
+      pointer-events: auto
+    }
+
+    #pie-david a:hover {
+      text-decoration: underline
+    }
+  </style>
+</head>
+
+<body>
+  <div id="menu">
+    <div id="mn"></div>
+  </div>
+  <div id="hud">
+    <canvas id="wc"></canvas>
+    <div id="fl"></div>
+    <div id="top"><span id="hl"></span><span id="hc"></span><span id="hs"></span></div>
+    <div id="pr"><i id="pb"></i></div>
+    <div id="en"><i id="eb"></i></div>
+    <button id="pa">⏸</button><button id="mu">🔊</button>
+    <div id="bn"></div>
+    <button class="t" id="bl">◀</button><button class="t" id="br">▶</button>
+    <button class="t" id="bj">⤒</button><button class="t" id="bt">🔥</button><button class="t" id="bk">🛑</button>
+  </div>
+  <div id="ps">
+    <div>⏸ PAUSA</div><button class="b big" onclick="pause()">Continuar</button><button class="b big"
+      onclick="quit()">Salir al menú</button>
+  </div>
+  <footer id="pie-david"><span>Creado por David Camacho</span><span>·</span><a
+      href="https://1dam-dcamper062.github.io/Juegos/">&larr; Volver al inicio</a></footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    const T = THREE, $ = id => document.getElementById(id);
+    const BIKES = [
+      { n: 'Scooter', c: 0xffcc00, kmh: 110, a: 3.5, hd: 1, tb: 1.10, p: 0 },
+      { n: 'Naked', c: 0x2e86ff, kmh: 200, a: 7, hd: 1.15, tb: 1.12, p: 300 },
+      { n: 'Sport', c: 0xff3b3b, kmh: 260, a: 9.5, hd: 1.3, tb: 1.15, p: 800 },
+      { n: 'Super GP', c: 0x9b30ff, kmh: 310, a: 12, hd: 1.5, tb: 1.18, p: 1800 }];
+    const TH = [
+      { n: 'Ciudad', sky: 0x8ec8f0, gr: 0x555a60, rd: '#333', len: 1800, d: 1, sc: 'b', cl: [0x8899aa, 0xaab4c0, 0x6c7a88] },
+      { n: 'Desierto', sky: 0xf2c88a, gr: 0xd4a860, rd: '#4a4038', len: 2200, d: 1.1, sc: 'r', cl: [0xb5834a, 0xc99a5c] },
+      { n: 'Bosque', sky: 0x9fd8ff, gr: 0x2f7a35, rd: '#3a3a3a', len: 2600, d: 1.2, sc: 't', cl: [0x1e5c28, 0x2a7a35] },
+      { n: 'Nieve', sky: 0xdfeaf5, gr: 0xf4f8fc, rd: '#555e66', len: 3000, d: 1.3, sc: 't', cl: [0x3d6b5a, 0x4f8a74] },
+      { n: 'Neón', sky: 0x0a0a22, gr: 0x120a2a, rd: '#15151f', len: 3400, d: 1.4, sc: 'b', cl: [0xff2fd0, 0x00e5ff, 0x7a2fff], lt: .5 },
+      { n: 'Volcán', sky: 0x401410, gr: 0x2a1612, rd: '#1c1c1c', len: 3800, d: 1.55, sc: 'r', cl: [0xff5a1a, 0x7a2a10, 0xc03a10], lt: .6 }];
+    const NL = 50, EM = ['🏙️', '🏜️', '🌲', '❄️', '🌃', '🌋'], mkL = (i, s) => Object.assign({}, TH[s], { len: 1500 + i * 45, d: 1 + i * .03 });
+    const DF = [{ n: 'Fácil', sp: .85, den: .6, lives: 5, m: 1, tm: .9 }, { n: 'Normal', sp: 1, den: 1, lives: 3, m: 1.6, tm: .7 }, { n: 'Difícil', sp: 1.1, den: 1.5, lives: 2, m: 2.5, tm: .5 }];
+    const UC = [150, 350, 700];
+    const TY = {
+      cone: { w: .9, h: .8, d: .9, c: 0xff7a00 }, bar: { w: 3.6, h: .9, d: .6, c: 0xdd3333 }, crate: { w: 1.8, h: 1.8, d: 1.8, c: 0x8b5a2b },
+      car: { w: 2, h: 1.9, d: 4, v: .35 }, truck: { w: 2.6, h: 3.2, d: 7, c: 0x667788, v: .25 }, pad: { w: 2, h: .05, d: 3, c: 0x22ff66 }, wall: { w: 11.6, h: .8, d: .6, c: 0xff3333 }, oil: { w: 2.2, h: .04, d: 3.2, c: 0x3a2a60 }
+    };
+    let S; try { S = JSON.parse(localStorage.getItem('mr3d')) } catch (e) { }
+    S = Object.assign({ coins: 0, owned: [0], bike: 0, up: [0, 0, 0], diff: 1, lv: 0, sc: 0, done: {} }, S || {});
+    if (!S.owned.includes(S.bike)) S.bike = 0;
+    S.lv = Math.max(0, Math.min(49, S.lv | 0));
+    const save = () => { try { localStorage.setItem('mr3d', JSON.stringify(S)) } catch (e) { } };
+
+    // ---------- escena ----------
+    const R = new T.WebGLRenderer({ antialias: true }); R.setPixelRatio(Math.min(devicePixelRatio, 2)); R.setSize(innerWidth, innerHeight); document.body.appendChild(R.domElement);
+    const sc = new T.Scene(), cam = new T.PerspectiveCamera(60, innerWidth / innerHeight, .1, 520);
+    const hemi = new T.HemisphereLight(0xffffff, 0x555555, .9); sc.add(hemi);
+    const sun = new T.DirectionalLight(0xffffff, .8); sun.position.set(20, 40, 10); sc.add(sun);
+    addEventListener('resize', () => { R.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix() });
+    const mc = {}; const mat = c => mc[c] || (mc[c] = new T.MeshLambertMaterial({ color: c }));
+    const coinMat = new T.MeshBasicMaterial({ color: 0xffd33d }), coinGeo = new T.CylinderGeometry(.4, .4, .1, 12).rotateX(Math.PI / 2);
+
+    function mkBike(b, fp) {
+      const g = new T.Group(), m = mat, wh = new T.CylinderGeometry(.42, .42, .18, 16).rotateZ(Math.PI / 2);
+      const w1 = new T.Mesh(wh, m(0x111111)), w2 = w1.clone(); w1.position.set(0, .42, -.85); w2.position.set(0, .42, .85);
+      const bd = new T.Mesh(new T.BoxGeometry(.4, .45, 1.4), m(b.c)); bd.position.set(0, .85, 0);
+      const tk = new T.Mesh(new T.BoxGeometry(.45, .3, .6), m(b.c)); tk.position.set(0, 1.15, -.3);
+      const fk = new T.Mesh(new T.BoxGeometry(.1, .8, .1), m(0x888888)); fk.position.set(0, .8, -.85); fk.rotation.x = .3;
+      const to = new T.Mesh(new T.BoxGeometry(.45, .7, .3), m(0x222222)); to.position.set(0, 1.55, .1); to.rotation.x = .4;
+      const hd = new T.Mesh(new T.SphereGeometry(.22, 12, 12), m(0xffffff)); hd.position.set(0, 2.05, -.15);
+      const hl = new T.Mesh(new T.BoxGeometry(.25, .2, .1), new T.MeshBasicMaterial({ color: 0xffffaa })); hl.position.set(0, 1.1, -1);
+      g.add(w1, w2, bd, tk, fk, hl);
+      if (fp) {
+        const hb = new T.Mesh(new T.CylinderGeometry(.02, .02, .9, 8).rotateZ(Math.PI / 2), m(0x222222)); hb.position.set(0, 1.3, -.5); g.add(hb);
+        for (const s of [-1, 1]) {
+          const gl = new T.Mesh(new T.BoxGeometry(.12, .1, .14), m(0x0a0a0a)); gl.position.set(s * .43, 1.3, -.5);
+          const ms = new T.Mesh(new T.BoxGeometry(.04, .22, .04), m(0x222222)); ms.position.set(s * .45, 1.4, -.5);
+          const mr = new T.Mesh(new T.BoxGeometry(.16, .1, .02), new T.MeshBasicMaterial({ color: 0x8fa3b8 })); mr.position.set(s * .47, 1.55, -.5); mr.rotation.y = -s * .3; g.add(gl, ms, mr)
+        }
+        const cv = document.createElement('canvas'); cv.width = 128; cv.height = 64; g.dc = cv.getContext('2d'); g.dt = new T.CanvasTexture(cv);
+        const dm = new T.Mesh(new T.PlaneGeometry(.3, .15), new T.MeshBasicMaterial({ map: g.dt })); dm.position.set(0, 1.38, -.45); dm.rotation.x = -.8; g.add(dm)
+      }
+      else g.add(to, hd);
+      g.w = [w1, w2]; return g
+    }
+
+    // escenario del menú
+    const stage = new T.Group(); let pv;
+    const disc = new T.Mesh(new T.CylinderGeometry(3, 3, .1, 32), mat(0x2a3350)); disc.position.y = -.05; stage.add(disc);
+    function setPv() { if (pv) stage.remove(pv); pv = mkBike(BIKES[S.bike]); stage.add(pv) }
+
+    // ---------- nivel ----------
+    let W = null, G = null;
+    const gT = new T.CylinderGeometry(.3, .4, 2), gC = new T.ConeGeometry(1.7, 4.5, 7), gR = new T.DodecahedronGeometry(1.6);
+    function scen(L, len) {
+      for (let z = 25; z > -len - 120; z -= 11 + Math.random() * 7 + len / 1000)for (const s of [-1, 1]) {
+        const x = s * (8 + Math.random() * 16), cl = L.cl[Math.random() * L.cl.length | 0]; let m;
+        if (L.sc == 'b') { const w = 3 + Math.random() * 4, h = 5 + Math.random() * 28; m = new T.Mesh(new T.BoxGeometry(w, h, w), mat(cl)); m.position.set(x + s * w / 2, h / 2, z) }
+        else if (L.sc == 't') { m = new T.Group(); const a = new T.Mesh(gT, mat(0x5a3b1e)), b = new T.Mesh(gC, mat(cl)); a.position.y = 1; b.position.y = 4; m.add(a, b); const k = .8 + Math.random() * .8; m.scale.set(k, k, k); m.position.set(x, 0, z) }
+        else { m = new T.Mesh(gR, mat(cl)); const k = .6 + Math.random() * 1.8; m.scale.set(k, k * (.6 + Math.random() * .8), k); m.position.set(x, k * .6, z) }
+        W.add(m)
+      }
+    }
+
+    function start() {
+      const L = mkL(S.lv, S.sc), D = DF[S.diff], B = BIKES[S.bike], vref = B.kmh / 3.6 * .85 * (1 + .04 * S.up[0]), len = Math.round(vref * (60 + S.lv * 1.2));
+      sc.remove(stage); if (W) sc.remove(W); W = new T.Group(); sc.add(W);
+      sc.background = new T.Color(L.sky); sc.fog = new T.Fog(L.sky, 60, 440); hemi.intensity = L.lt || .9;
+      const cz = -len / 2 - 50;
+      const cv = document.createElement('canvas'); cv.width = 64; cv.height = 128; const x = cv.getContext('2d');
+      x.fillStyle = L.rd; x.fillRect(0, 0, 64, 128); for (let i = 0; i < 500; i++) { x.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.12)'; x.fillRect(Math.random() * 64, Math.random() * 128, 1 + Math.random() * 2, 1) } x.fillStyle = '#fff'; x.fillRect(2, 0, 3, 128); x.fillRect(59, 0, 3, 128); x.fillStyle = '#ddd'; x.fillRect(31, 10, 3, 50);
+      const tx = new T.CanvasTexture(cv); tx.wrapS = tx.wrapT = T.RepeatWrapping; tx.repeat.set(1, (len + 200) / 20); tx.anisotropy = 8;
+      const rd = new T.Mesh(new T.PlaneGeometry(12, len + 200).rotateX(-Math.PI / 2), new T.MeshLambertMaterial({ map: tx })); rd.position.set(0, 0, cz);
+      const gr = new T.Mesh(new T.PlaneGeometry(500, len + 300).rotateX(-Math.PI / 2), mat(L.gr)); gr.position.set(0, -.03, cz);
+      const rl = new T.Mesh(new T.BoxGeometry(.25, .5, len + 200), mat(0xb0b4b8)); rl.position.set(-6.3, .45, cz); const rr = rl.clone(); rr.position.x = 6.3;
+      W.add(rd, gr, rl, rr); scen(L, len);
+      const m4 = new T.Matrix4(), np = Math.floor((len + 200) / 25), pm = new T.InstancedMesh(new T.BoxGeometry(.14, 1.1, .14), mat(0xffffff), np * 2);
+      for (let i = 0; i < np; i++)for (let k = 0; k < 2; k++) { m4.setPosition(k ? 6.7 : -6.7, .55, 40 - i * 25); pm.setMatrixAt(i * 2 + k, m4) }
+      const nl = Math.floor((len + 200) / 60), lm = new T.InstancedMesh(new T.BoxGeometry(.25, 8, .25), mat(0x666b70), nl * 2);
+      for (let i = 0; i < nl; i++)for (let k = 0; k < 2; k++) { m4.setPosition(k ? 8 : -8, 4, 40 - i * 60); lm.setMatrixAt(i * 2 + k, m4) }
+      pm.frustumCulled = lm.frustumCulled = false; W.add(pm, lm);
+      // meta
+      const c2 = document.createElement('canvas'); c2.width = 64; c2.height = 16; const y = c2.getContext('2d');
+      for (let i = 0; i < 16; i++)for (let j = 0; j < 4; j++) { y.fillStyle = (i + j) % 2 ? '#000' : '#fff'; y.fillRect(i * 4, j * 4, 4, 4) }
+      const fl = new T.Mesh(new T.PlaneGeometry(12, 2).rotateX(-Math.PI / 2), new T.MeshBasicMaterial({ map: new T.CanvasTexture(c2) })); fl.position.set(0, .03, -len);
+      const bar = new T.Mesh(new T.BoxGeometry(13, 1, .6), mat(0xffd33d)); bar.position.set(0, 7, -len);
+      const p1 = new T.Mesh(new T.BoxGeometry(.6, 7, .6), mat(0xdd3333)); p1.position.set(-6.5, 3.5, -len); const p2 = p1.clone(); p2.position.x = 6.5;
+      W.add(fl, bar, p1, p2);
+      // obstáculos y monedas
+      const O = [], C = [], lanes = [-4.2, -2.1, 0, 2.1, 4.2], gap = Math.max(vref * D.tm, vref * 1.5 / (L.d * D.den)), gc = {};
+      const carCols = [0x3366cc, 0xcc3366, 0x33aa66, 0xeeeeee];
+      function addO(k, x, z) {
+        const t = TY[k], m = new T.Mesh(gc[k] || (gc[k] = new T.BoxGeometry(t.w, t.h, t.d)), mat(t.c || carCols[Math.random() * 4 | 0]));
+        m.position.set(x, t.h / 2, z); W.add(m); O.push({ m, x, z, w: t.w, h: t.h, d: t.d, v: t.v ? vref * t.v * (.8 + Math.random() * .4) : 0, k })
+      }
+      let pl = 2; const pd = Math.min(.8, .3 * L.d * D.den);
+      for (let z = -vref * 5; z > -len + vref * 2; z -= gap) {
+        if (S.lv >= 4 && Math.random() < .06 * Math.min(2, L.d)) { addO('wall', 0, z); z -= vref; continue }
+        pl = Math.max(0, Math.min(4, pl + [-1, 0, 0, 1][Math.random() * 4 | 0]));
+        lanes.forEach((lx, i) => {
+          if (i == pl) { if (S.lv >= 8 && Math.random() < .1) addO('oil', lx, z); return }
+          if (Math.random() > pd) return;
+          const r = Math.random(); let k;
+          if (r < .2) k = 'cone'; else if (r < .38) k = 'bar'; else if (r < .6) k = 'crate'; else if (r < .85 || S.lv < 4) k = 'car'; else k = 'truck';
+          addO(k, lx, z + (Math.random() - .5) * 3)
+        });
+        if (Math.random() < .12) addO('pad', lanes[pl], z - gap * .45);
+        else for (let q = 0; q < 3; q++) { const m = new T.Mesh(coinGeo, coinMat); m.position.set(lanes[pl], 1, z - 3 - q * 5); W.add(m); C.push({ m, x: lanes[pl], z: z - 3 - q * 5, t: 0 }) }
+      }
+      const bike = mkBike(B, 1); W.add(bike); bike.add(cam);
+      G = { on: 1, p: 0, L, D, B, li: S.lv, v: 0, x: 0, y: 0, vy: 0, sx: 0, z: 0, lives: D.lives, c: 0, en: 100, inv: 0, sh: 0, bo: 0, oil: 0, pz: 0, gear: 1, rpm: 1800, ex: 0, ns: 0, O, C, bike, len };
+      $('menu').style.display = 'none'; $('hud').style.display = 'block'; $('mu').textContent = S.mute ? '🔇' : '🔊';
+      banner(`Nivel ${S.lv + 1}: ${L.n}`);
+    }
+    function banner(t) { const b = $('bn'); b.textContent = t; b.style.opacity = 1; setTimeout(() => b.style.opacity = 0, 1800) }
+
+    function upd(dt) {
+      const g = G, mx = g.B.kmh / 3.6 * (1 + .04 * S.up[0]), u = S.up[2];
+      if (g.en <= 0) g.ex = 1; else if (g.en >= 25) g.ex = 0;
+      let nit = 0;
+      if (inp.t && !g.ex && g.en > 0) { nit = 1; g.en = Math.max(0, g.en - 28 / (1 + .2 * u) * dt) } else g.en = Math.min(100, g.en + 9 * (1 + .35 * u) * dt);
+      if (g.bo > 0) { nit = 1; g.bo -= dt }
+      g.ns += (nit - g.ns) * Math.min(1, dt * 4);
+      const top = mx * (1 + (g.B.tb - 1) * g.ns);
+      let ac2 = g.B.a * (1 + .5 * g.ns) * (1 - Math.pow(Math.min(1, g.v / top), 1.6));
+      if (g.v > top) ac2 = -4;
+      if (inp.k) ac2 = -16;
+      g.v = Math.max(0, g.v + ac2 * dt);
+      const rt = g.v / mx, bn = [0, .1, .22, .38, .56, .78, 1.01]; let gi = 1; while (gi < 6 && rt >= bn[gi]) gi++;
+      g.gear = gi; g.rpm = g.v < 2 ? 1800 + g.v * 800 : Math.min(12000, 3500 + ((rt - bn[gi - 1]) / (bn[gi] - bn[gi - 1])) * 8500);
+      const s = (inp.r ? 1 : 0) - (inp.l ? 1 : 0); g.oil = Math.max(0, g.oil - dt); g.sx += (s - g.sx) * Math.min(1, dt * (g.oil > 0 ? 2.2 : 9));
+      g.x = Math.max(-5.2, Math.min(5.2, g.x + g.sx * (7 + 5 * g.B.hd + 1.5 * S.up[1]) * (1.1 - .3 * Math.min(1, g.v / 80)) * Math.min(1, g.v / 6) * dt));
+      g.pz = g.z; g.z -= g.v * dt;
+      if (inp.j && g.y == 0 && g.vy == 0) { g.vy = 9; bp(300, .1) }
+      if (g.y > 0 || g.vy > 0) { g.vy -= 24 * dt; g.y += g.vy * dt; if (g.y <= 0) { g.y = 0; g.vy = 0 } }
+      g.inv = Math.max(0, g.inv - dt); g.sh = Math.max(0, g.sh - dt);
+      const b = g.bike; b.position.set(g.x, g.y, g.z); b.rotation.z = -g.sx * .3; b.rotation.x = g.vy * .02;
+      $('fl').style.opacity = Math.min(.6, g.inv / 1.6);
+      if (b.dc) { const c = b.dc; c.fillStyle = '#061018'; c.fillRect(0, 0, 128, 64); c.fillStyle = '#4ade80'; c.font = 'bold 34px monospace'; c.textAlign = 'center'; c.fillText(Math.round(g.v * 3.6), 64, 40); c.font = '12px monospace'; c.fillStyle = '#8fb4ff'; c.fillText('km/h', 64, 57); c.fillStyle = g.en > 25 ? '#38bdf8' : '#f33'; c.fillRect(8, 6, Math.max(0, g.en) * 1.12, 5); c.fillStyle = g.rpm > 10500 ? '#f33' : '#4ade80'; c.fillRect(8, 60, g.rpm / 12000 * 112, 3); c.fillStyle = '#fff'; c.font = 'bold 14px monospace'; c.textAlign = 'left'; c.fillText('M' + g.gear, 8, 52); b.dt.needsUpdate = true }
+      b.w.forEach(w => w.rotation.x -= g.v * dt / .42);
+      const sh = g.sh * (Math.random() - .5) * .5, vb = Math.sin(performance.now() * .02) * .0015 * rt;
+      cam.position.set(sh, 1.75 + sh + vb, .25); cam.rotation.set(-.12, 0, g.sx * .12);
+      cam.fov = 72 + Math.min(16, g.v * .18) + 8 * g.ns; wind(rt * (1 + .15 * g.ns), dt); cam.updateProjectionMatrix();
+      if (osc) { const t0 = ac.currentTime, f = g.rpm / 60; osc.frequency.setTargetAtTime(f, t0, .08); o2.frequency.setTargetAtTime(f * .5, t0, .08); lf.frequency.setTargetAtTime(350 + g.rpm / 12, t0, .1) }
+      if (wg) { wg.gain.setTargetAtTime(S.mute ? 0 : Math.pow(g.v / 90, 2) * .05, ac.currentTime, .15); wf.frequency.value = 400 + g.v * 15 }
+      for (const o of g.O) {
+        if (o.dead) continue;
+        if (o.v) { o.z -= o.v * dt; o.m.position.z = o.z }
+        if (o.z > g.z - o.d / 2 - .9 && o.z < g.pz + o.d / 2 + .9 && Math.abs(o.x - g.x) < o.w / 2 + .35) {
+          if (o.k == 'pad') { o.dead = 1; o.m.visible = false; g.en = Math.min(100, g.en + 35); g.bo = 1.4; bp(700, .15) }
+          else if (o.k == 'oil') { if (g.y < .3) g.oil = 1.3 } else if (g.y < o.h - .15 && g.inv <= 0) {
+            o.dead = 1; o.m.visible = false; g.lives--; g.inv = 1.6; g.v *= .35; g.sh = .4; bp(90, .3);
+            if (g.lives <= 0) { end(false); return }
+          }
+        }
+      }
+      for (const c of g.C) {
+        if (c.t) continue; c.m.rotation.y += dt * 3;
+        if (c.z > g.z - 1.3 && c.z < g.pz + 1.3 && Math.abs(c.x - g.x) < 1.4 && g.y < 2.4) { c.t = 1; c.m.visible = false; g.c++; bp(900, .07) }
+      }
+      const p = -g.z / g.len;
+      $('hl').textContent = '❤'.repeat(g.lives); $('hc').textContent = '🪙 ' + g.c; $('hs').textContent = Math.round(g.v * 3.6) + ' km/h';
+      $('pb').style.width = Math.min(100, p * 100) + '%'; $('eb').style.width = g.en + '%';
+      if (p >= 1) end(true);
+    }
+    function end(win) {
+      const g = G; S.coins += g.c; let msg;
+      if (win) {
+        const bn = Math.round((200 + g.li * 40) * g.D.m); S.coins += bn; S.done[S.diff + '.' + S.sc + '.' + g.li] = 1;
+        if (S.lv == g.li && S.lv < NL - 1) S.lv++; msg = `🏁 ¡Nivel completado! +${bn} 🪙 de premio y ${g.c} 🪙 recogidas`
+      }
+      else msg = `💥 Te has estrellado. Recogiste ${g.c} 🪙`;
+      save(); G = null; toMenu(msg)
+    }
+    function toMenu(msg, sn) {
+      scr = sn || 'sel';
+      if (W) { sc.remove(W); W = null }
+      sc.fog = null; sc.background = new T.Color(0x0e1424); hemi.intensity = .9; sc.add(stage);
+      wx.clearRect(0, 0, wc.width, wc.height); sc.add(cam); cam.rotation.set(0, 0, 0); cam.fov = 50; cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); cam.position.set(3.2, 1.8, 4.6); cam.lookAt(0, .9, 0);
+      $('menu').style.display = 'flex'; $('hud').style.display = 'none'; $('ps').style.display = 'none';
+      setPv(); rend(msg)
+    }
+    function pause() { if (!G) return; G.p = !G.p; $('ps').style.display = G.p ? 'flex' : 'none' }
+    function quit() { G = null; toMenu() }
+
+    // ---------- menú ----------
+    let scr = 'home';
+    const unl = i => i == 0 || !!S.done[S.diff + '.' + S.sc + '.' + (i - 1)];
+    const fix = () => { while (S.lv > 0 && !unl(S.lv)) S.lv-- };
+    function go(x) { scr = x; rend() }
+    function rend(msg) {
+      fix();
+      const q0 = $('mn').querySelector('.g5'), sp = q0 ? q0.scrollTop : 0;
+      const B = BIKES[S.bike], own = S.owned.includes(S.bike), H = msg ? `<div class="m">${msg}</div>` : '', cn = `<div class="c">🪙 ${S.coins}</div>`;
+      const col = n => '#' + n.toString(16).padStart(6, '0');
+      let h;
+      if (scr == 'home') h = `<h1 class="tt">🏍️ Moto 3D</h1><p class="sub">6 escenarios · 50 niveles por dificultad · primera persona</p>${H}${cn}
+ <button class="b big go" onclick="go('sel')">▶ JUGAR</button><button class="b big" onclick="go('gar')">🛠️ GARAJE Y MEJORAS</button>
+ <div id="help">PC: ←/→ o A/D mover · Espacio saltar · Shift nitro · S/↓ freno · P pausa<br>Móvil: botones en pantalla. Salta los obstáculos bajos; las zonas verdes dan turbo. Muros bajos: ¡salta! Manchas moradas: aceite, pierdes control.</div>`;
+      else if (scr == 'gar') h = `<h1>🛠️ Garaje</h1>${cn}
+ <h3>Moto: ${B.n}</h3><div class="r"><button class="b" onclick="sb(-1)">◀</button>
+ <div class="st"><div>Velocidad ${bar(B.kmh, 320)} ${B.kmh} km/h</div><div>Aceleración ${bar(B.a, 12)}</div><div>Manejo ${bar(B.hd, 1.6)}</div><div>Nitro ${bar(B.tb - 1, .2)} +${Math.round((B.tb - 1) * 100)}%</div></div>
+ <button class="b" onclick="sb(1)">▶</button></div>
+ ${own ? '<div class="c" style="font-size:14px">✔ Tuya</div>' : `<button class="b big" ${S.coins < B.p ? 'disabled' : ''} onclick="bb()">Comprar 🪙 ${B.p}</button>`}
+ <h3>Mejoras (todas las motos)</h3>${['Motor', 'Manejo', 'Turbo'].map((n, i) => `<div class="r2"><span>${n} ${'■'.repeat(S.up[i])}${'□'.repeat(3 - S.up[i])}</span><button class="b" ${S.up[i] >= 3 || S.coins < UC[S.up[i]] ? 'disabled' : ''} onclick="bu(${i})">${S.up[i] >= 3 ? 'MAX' : '🪙 ' + UC[S.up[i]]}</button></div>`).join('')}
+ <button class="b big" onclick="go('home')">← Atrás</button>`;
+      else h = `<h1>Elige escenario</h1>${H}${cn}
+ <div class="sg">${TH.map((t, i) => `<button class="sc ${S.sc == i ? 'on' : ''}" style="background:linear-gradient(${col(t.sky)},${col(t.gr)})" onclick="ss(${i})"><span>${EM[i]}</span>${t.n}</button>`).join('')}</div>
+ <h3>Dificultad</h3><div class="r">${DF.map((d, i) => `<button class="b ${S.diff == i ? 'on' : ''}" onclick="sd(${i})">${d.n}</button>`).join('')}</div>
+ <h3>Nivel ${S.lv + 1}/50 · ${TH[S.sc].n}</h3><div class="g5">${Array.from({ length: NL }, (_, i) => `<button class="b ${S.lv == i ? 'on' : ''}" ${unl(i) ? '' : 'disabled'} onclick="sl(${i})">${S.done[S.diff + '.' + S.sc + '.' + i] ? '✔' : unl(i) ? i + 1 : '🔒'}</button>`).join('')}</div>
+ <div id="help" style="margin:6px 0">Supera un nivel para desbloquear el siguiente. Cada escenario y dificultad llevan su propio progreso.</div>
+ <div class="r2"><span>Moto: ${B.n}</span><button class="b" onclick="go('gar')">Cambiar</button></div>
+ ${own ? '' : '<div class="m">Esta moto no es tuya: cómprala o elige otra en el Garaje.</div>'}
+ <button class="b big go" ${own ? '' : 'disabled'} onclick="play()">▶ EMPEZAR</button><button class="b big" onclick="go('home')">← Inicio</button>`;
+      $('mn').innerHTML = h; const q1 = $('mn').querySelector('.g5'); if (q1) q1.scrollTop = sp
+    }
+    const bar = (v, m) => `<i class="bar"><b style="width:${v / m * 100}%"></b></i>`;
+    function sd(i) { S.diff = i; save(); rend() }
+    function ss(i) { S.sc = i; save(); rend() }
+    function sl(i) { if (!unl(i)) return; S.lv = i; save(); rend() }
+    function sb(d) { S.bike = (S.bike + d + BIKES.length) % BIKES.length; save(); setPv(); rend() }
+    function bb() { const B = BIKES[S.bike]; if (S.coins >= B.p) { S.coins -= B.p; S.owned.push(S.bike); save(); rend() } }
+    function bu(i) { const c = UC[S.up[i]]; if (S.up[i] < 3 && S.coins >= c) { S.coins -= c; S.up[i]++; save(); rend() } }
+    function play() { if (!unl(S.lv)) return; snd(); start() }
+
+    // ---------- controles ----------
+    const inp = { l: 0, r: 0, j: 0, t: 0, k: 0 };
+    [['bl', 'l'], ['br', 'r'], ['bj', 'j'], ['bt', 't'], ['bk', 'k']].forEach(([id, k]) => {
+      const e = $(id), on = v => ev => { ev.preventDefault(); inp[k] = v };
+      e.addEventListener('pointerdown', on(1));['pointerup', 'pointerleave', 'pointercancel'].forEach(n => e.addEventListener(n, on(0)))
+    });
+    $('pa').onclick = pause; $('mu').onclick = () => { S.mute = !S.mute; save(); $('mu').textContent = S.mute ? '🔇' : '🔊' };
+    const km = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', Space: 'j', ArrowUp: 'j', KeyW: 'j', ShiftLeft: 't', ShiftRight: 't', ArrowDown: 'k', KeyS: 'k' };
+    addEventListener('keydown', e => { if (km[e.code]) { inp[km[e.code]] = 1; e.preventDefault() } if (e.code == 'KeyP' || e.code == 'Escape') pause() });
+    addEventListener('keyup', e => { if (km[e.code]) inp[km[e.code]] = 0 });
+
+    // ---------- viento ----------
+    const wc = $('wc'), wx = wc.getContext('2d');
+    function sizeWc() { wc.width = innerWidth; wc.height = innerHeight } sizeWc(); addEventListener('resize', sizeWc);
+    const ws = Array.from({ length: 45 }, () => ({ a: Math.random() * 6.283, p: Math.random(), s: .6 + Math.random() * .8 })); let wi = 0;
+    function wind(r, dt) {
+      const w = wc.width, h = wc.height, cx = w / 2, cy = h * .45, R0 = Math.hypot(w, h) / 2;
+      wi += (r - wi) * Math.min(1, dt * 3); wx.clearRect(0, 0, w, h); if (wi < .4) return;
+      const k = Math.min(1, (wi - .4) / .4), n = Math.ceil(45 * k); wx.lineWidth = 1.5;
+      for (let i = 0; i < n; i++) {
+        const q = ws[i]; q.p += dt * (.7 + wi * 1.4) * q.s; if (q.p > 1) { q.p = 0; q.a = Math.random() * 6.283 }
+        const r1 = R0 * (.3 + q.p * .7), r2 = r1 + R0 * (.04 + .16 * wi) * (.3 + q.p), al = (.08 + .2 * wi) * k * Math.sin(q.p * Math.PI);
+        wx.strokeStyle = `rgba(255,255,255,${al})`; wx.beginPath(); wx.moveTo(cx + Math.cos(q.a) * r1, cy + Math.sin(q.a) * r1); wx.lineTo(cx + Math.cos(q.a) * r2, cy + Math.sin(q.a) * r2); wx.stroke()
+      }
+    }
+    // ---------- sonido ----------
+    let ac, osc, gn, wg, wf, o2, lf;
+    function snd() { if (ac) return; try { ac = new (window.AudioContext || window.webkitAudioContext)(); osc = ac.createOscillator(); gn = ac.createGain(); osc.type = 'sawtooth'; o2 = ac.createOscillator(); o2.type = 'triangle'; lf = ac.createBiquadFilter(); lf.type = 'lowpass'; lf.frequency.value = 500; gn.gain.value = 0; osc.connect(gn); o2.connect(gn); gn.connect(lf); lf.connect(ac.destination); osc.start(); o2.start(); const nb = ac.createBuffer(1, ac.sampleRate, ac.sampleRate), dd = nb.getChannelData(0); for (let i = 0; i < dd.length; i++)dd[i] = Math.random() * 2 - 1; const ns = ac.createBufferSource(); ns.buffer = nb; ns.loop = true; wf = ac.createBiquadFilter(); wf.type = 'bandpass'; wf.frequency.value = 800; wg = ac.createGain(); wg.gain.value = 0; ns.connect(wf); wf.connect(wg); wg.connect(ac.destination); ns.start() } catch (e) { } }
+    function bp(f, d) { if (!ac || S.mute) return; const o = ac.createOscillator(), q = ac.createGain(); o.frequency.value = f; q.gain.value = .07; o.connect(q); q.connect(ac.destination); o.start(); o.stop(ac.currentTime + d) }
+
+    // ---------- bucle ----------
+    let last = performance.now();
+    function loop(t) {
+      requestAnimationFrame(loop); const dt = Math.min(.05, (t - last) / 1000); last = t;
+      if (gn) gn.gain.value = (G && G.on && !G.p && !S.mute) ? .06 : 0; if (wg && !(G && G.on && !G.p)) wg.gain.value = 0;
+      if (G && G.on) { if (!G.p) upd(dt) } else if (pv) pv.rotation.y += dt * .8;
+      R.render(sc, cam)
+    }
+    toMenu(0, 'home'); requestAnimationFrame(loop);
+  </script>
+</body>
+
+</html>
