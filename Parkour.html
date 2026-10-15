@@ -244,7 +244,7 @@
   <div id="home">
     <div id="hp">
       <h1>Parkour</h1>
-      <p class="s">Parkour 3D en primera persona. 4 dificultades, 30 niveles cada una.</p>
+      <p class="s">Parkour 3D en primera persona. 5 dificultades, 50 niveles cada una. Doble salto, dash, agacharte, escaleras de mano y obstáculos mortales. Infernal es casi imposible.</p>
       <div id="hb"><button class="on" onclick="play()">Jugar</button><button onclick="levels()">Seleccionar
           nivel</button></div>
       <div id="hd"></div>
@@ -258,15 +258,15 @@
         de inicio</button>
       <div id="ds"></div>
       <div id="gr"></div>
-      <p class="s">W A S D mover · Shift correr · Espacio saltar (mantén para saltar más alto) · R volver al último
+      <p class="s">W A S D mover · Shift correr · Espacio saltar (mantén para saltar más alto; otra pulsación en el aire = doble salto) · Q/E dash · C agacharte (para pasar bajo vigas y túneles) · W junto a una escalera de mano para trepar (Espacio para soltarte) · plataformas rosas = impulso · esquiva barras y paredes móviles · R volver al último
         checkpoint · Esc pausa. Si el ratón no se bloquea, arrastra para mirar. Llega a la plataforma verde sin caer a
         la lava.</p>
     </div>
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
-    const $ = id => document.getElementById(id), DN = ['Fácil', 'Normal', 'Difícil', 'Extremo'], NL = 30;
-    let diff = 0, lvl = 1, state = 'menu', boxes = [], G, spawn = new THREE.Vector3(), lowest = 0, time = 0, falls = 0, clk = 0, bob = 0, dip = 0, cpb = null, lnd = null, drag = false, best = {}, keys = {};
+    const $ = id => document.getElementById(id), DN = ['Fácil', 'Normal', 'Difícil', 'Extremo', 'Infernal'], NL = 50;
+    let haz = [], lad = [], diff = 0, lvl = 1, state = 'menu', boxes = [], G, spawn = new THREE.Vector3(), lowest = 0, time = 0, falls = 0, clk = 0, bob = 0, dip = 0, cpb = null, lnd = null, drag = false, best = {}, keys = {};
     try {best = JSON.parse(localStorage.getItem('sk3d') || '{}')} catch (e) { }
     const save = () => {try {localStorage.setItem('sk3d', JSON.stringify(best))} catch (e) { } };
     const ok = l => l <= 1 || !!best[diff + '-' + (l - 1)], nxt = () => {for (let l = 1; l <= NL; l++)if (!best[diff + '-' + l]) return l; return NL};
@@ -286,29 +286,54 @@
     const tM = mk(g => {g.fillStyle = '#d9731f'; g.fillRect(0, 0, 256, 256); g.fillStyle = '#1e1e1e'; for (let i = -256; i < 512; i += 64) {g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 32, 0); g.lineTo(i - 224, 256); g.lineTo(i - 256, 256); g.fill()} speck(g, 2500, .1)});
     const tK = mk(g => {g.fillStyle = '#b39466'; g.fillRect(0, 0, 256, 256); speck(g, 5000, .1); g.strokeStyle = 'rgba(60,40,20,.6)'; for (let i = 0; i < 14; i++) {g.beginPath(); let x = Math.random() * 256, y = Math.random() * 256; g.moveTo(x, y); for (let j = 0; j < 5; j++)g.lineTo(x += Math.random() * 40 - 20, y += Math.random() * 40 - 20); g.stroke()} });
     const tL = mk(g => {g.fillStyle = '#3a0d00'; g.fillRect(0, 0, 256, 256); for (let i = 0; i < 70; i++) {const x = Math.random() * 256, y = Math.random() * 256, r = 10 + Math.random() * 30, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,170,40,.9)'); gr.addColorStop(1, 'rgba(255,60,0,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r)} });
-    tL.repeat.set(160, 160);
-    const M = (o) => new THREE.MeshStandardMaterial(o), mat = {s: M({map: tC, roughness: .92}), m: M({map: tM, roughness: .45, metalness: .35}), k: M({map: tK, roughness: 1}), c: M({map: tC, color: 0x58a8ff, emissive: 0x0b3a80, roughness: .6}), g: M({map: tC, color: 0x5cff95, emissive: 0x0a8a38, roughness: .6})};
-    const lava = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), M({map: tL, emissiveMap: tL, emissive: 0xff5a14, roughness: .7})); lava.rotation.x = -Math.PI / 2; S.add(lava);
+    tL.repeat.set(400, 400);
+    const M = (o) => new THREE.MeshStandardMaterial(o), mat = {s: M({map: tC, roughness: .92}), m: M({map: tM, roughness: .45, metalness: .35}), k: M({map: tK, roughness: 1}), c: M({map: tC, color: 0x58a8ff, emissive: 0x0b3a80, roughness: .6}), g: M({map: tC, color: 0x5cff95, emissive: 0x0a8a38, roughness: .6}), j: M({map: tC, color: 0xff4fd8, emissive: 0x8a0a70, roughness: .5}), h: M({color: 0xff3030, emissive: 0xaa0000, roughness: .4})};
+    const lava = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), M({map: tL, emissiveMap: tL, emissive: 0xff5a14, roughness: .7})); lava.rotation.x = -Math.PI / 2; S.add(lava);
     function box(w, h, d, m) {const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv, s = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]]; for (let i = 0; i < 24; i++) {const f = i >> 2; uv.setXY(i, uv.getX(i) * s[f][0] / 3, uv.getY(i) * s[f][1] / 3)} return new THREE.Mesh(g, m)}
     // ---------- generación de niveles ----------
     function build() {
       if (G) S.remove(G); G = new THREE.Group(); S.add(G); boxes = []; cpb = null;
-      const r = rng(lvl * 977 + diff * 131 + 7), t = (lvl - 1) / (NL - 1), n = 9 + Math.floor(lvl * 1.1) + diff * 3; let x = 0, y = 0, z = 0, ang = 0, pw = 7;
+      const r = rng(lvl * 977 + diff * 131 + 7), t = (lvl - 1) / (NL - 1), n = 18 + lvl * 2 + diff * 8; let x = 0, y = 0, z = 0, ang = 0, pw = 7, pt = 's', lh = 0; haz = []; lad = [];
       const add = (x, y, z, w, d, ty) => {const b = {x, y, z, hx: w / 2, hy: .6, hz: d / 2, ty, on: true, ox: x, oy: y, oz: z, dx: 0, dy: 0, dz: 0, t0: 0}, m = box(w, 1.2, d, mat[ty]); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; G.add(m); b.m = m; boxes.push(b); return b};
+      const slab = (cx, yy, cz, W, H, D, ty, mk) => {const m = box(W, H, D, mat[mk]); m.position.set(cx, yy, cz); m.castShadow = m.receiveShadow = true; G.add(m); boxes.push({x: cx, y: yy, z: cz, hx: W / 2, hy: H / 2, hz: D / 2, ty, on: true, ox: cx, oy: yy, oz: cz, dx: 0, dy: 0, dz: 0, t0: 0, m})};
+      const tun = b => slab(b.x, b.y + b.hy + 4.75, b.z, b.hx * 2 + 10, 7, 3, 'w', 'm');
+      const hz = b => {const spin = r() < .5, hi = r() < .45, L = spin ? b.hx + .6 : b.hx, m = new THREE.Mesh(new THREE.BoxGeometry(2 * L, .8, .5), mat.h); m.castShadow = true; G.add(m); haz.push({m, cx: b.x, cy: b.y + b.hy + (hi ? 1.45 : .4), cz: b.z, L, spin, a: 0, oz: 0, ph: r() * 6.28, sp: (.9 + r() * .7 + t * .9) * (1 + diff * .2) * (r() < .5 ? 1 : -1), amp: b.hz - .5})};
+      const lad1 = (b, H) => {
+        const ax = Math.abs(Math.sin(ang)) > Math.abs(Math.cos(ang)), dx = ax ? (Math.sin(ang) < 0 ? -1 : 1) : 0, dz = ax ? 0 : (Math.cos(ang) > 0 ? -1 : 1), top = b.y + b.hy, tx = b.x + dx * (b.hx + 1.52), tz = b.z + dz * (b.hz + 1.52);
+        slab(tx, top + H - (H + 12) / 2, tz, 3, H + 12, 3, 's', 'k');
+        const g = new THREE.Group(), lm = new THREE.MeshStandardMaterial({color: 0xc9a46a, roughness: .6, metalness: .2}), bx = (w, h, d, px, py, pz) => {const q = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lm); q.position.set(px, py, pz); g.add(q)};
+        for (const q of [-.45, .45]) bx(.09, H + .4, .09, ax ? 0 : q, (H - .4) / 2, ax ? q : 0);
+        for (let yy = -.2; yy < H; yy += .45) bx(ax ? .09 : .9, .07, ax ? .9 : .09, 0, yy, 0);
+        g.position.set(tx - dx * 1.56, top, tz - dz * 1.56); G.add(g);
+        lad.push({cx: tx - dx * 1.85, cz: tz - dz * 1.85, hx: ax ? .75 : .95, hz: ax ? .95 : .75, y0: top - .4, y1: top + H + .2, top: top + H, dx, dz});
+        x = tx; z = tz; y = top + H; pw = 3; pt = 'L'; lh = H;
+      };
       add(0, 0, 0, 7, 7, 's');
       for (let i = 1; i <= n; i++) {
-        const last = i === n, cp = !last && i % 7 === 0;
+        const last = i === n, cp = !last && i % 10 === 0;
         ang = Math.max(-1, Math.min(1, ang + (r() - .5) * (.7 + .25 * diff)));
-        const dy = Math.min(1.1, (r() - .5) * (1 + t * 1.2)), w = last ? 7 : cp ? 5 : Math.max(1.7, 4.4 - 3 * t - .35 * diff + r() * .8);
-        let ty = last ? 'g' : cp ? 'c' : 's';
-        if (ty === 's') {const q = r(); if (lvl >= 4 && q < .15 + .15 * t) ty = 'm'; else if (lvl >= 8 && q < .38) ty = 'k'}
-        let gap = 1.6 + t * 2.3 + diff * .45 + r() * .8 - Math.max(0, dy) * 1.3; if (ty === 'm' || last || cp) gap = Math.min(gap, 3.2); gap = Math.max(1, Math.min(gap, 5.1));
+        let dy = Math.min(2.6, (r() - .5) * (1 + t * 1.8 + diff * .35)); if (pt === 'j') dy = 3 + r() * 2.5; if (pt === 'L') dy = -(lh * .6 + r() * 1.5);
+        let ty = last ? 'g' : cp ? 'c' : 's', sp = 0;
+        if (ty === 's') {const q = r(); if (lvl >= 6 && q < .08 + .03 * diff) ty = 'j'; else if (lvl >= 4 && q < .32 + .18 * t) ty = 'm'; else if (lvl >= 8 && q < .45) ty = 'k'}
+        if (ty === 's') {const q = r(), ph = Math.min(.5, .2 + .3 * t + .1 * diff), pc = Math.min(.3, .1 + .12 * t + .04 * diff); if (lvl >= 5 && q < ph) sp = 1; else if (lvl >= 3 && q < ph + pc) sp = 2}
+        let w = last ? 7 : cp ? 5 : Math.max(1.3, 3.8 - 2.8 * t - .4 * diff + r() * .7); if (sp) w = Math.max(w, 3.4);
+        let gap = 2.2 + t * 3 + diff * .7 + r() * .9 - Math.max(0, dy) * 1.3; if (ty === 'm' || last || cp) gap = Math.min(gap, 3.6); if (pt === 'j') gap = Math.max(gap, 2.5); if (pt === 'L') gap = Math.max(gap, 4); gap = Math.max(1, Math.min(gap, pt === 'L' ? 9 : 7.2));
         const d = pw / 2 + gap + w / 2; x += Math.sin(ang) * d; z -= Math.cos(ang) * d; y += dy;
         const b = add(x, y, z, w, w, ty);
-        if (ty === 'm') {const v = r() < .3; b.mv = {ax: v ? [0, 1, 0] : [Math.cos(ang), 0, Math.sin(ang)], amp: v ? 1.2 : 2 + r() * 1.2, sp: .6 + r() * .6 + t * .4, ph: r() * 6.28}}
-        pw = w
+        if (ty === 'm') {const v = r() < .3; b.mv = {ax: v ? [0, 1, 0] : [Math.cos(ang), 0, Math.sin(ang)], amp: v ? 1.2 : 2 + r() * 1.2, sp: .6 + r() * .6 + t * .4 + diff * .12, ph: r() * 6.28}}
+        else if (sp === 1) hz(b); else if (sp === 2) tun(b);
+        pt = ty; pw = w;
+        if (ty === 's' && !sp && !last && i < n - 1) {
+          const q = r();
+          if (lvl >= 2 && q < .2 + .15 * t + .04 * diff) lad1(b, 6 + r() * (4 + 6 * t));
+          else if (lvl >= 3 && q < .32 + .15 * t + .04 * diff) {
+            const up = r() < .6, k = 4 + Math.floor(r() * 5);
+            for (let j = 0; j < k; j++) {const sd = j ? 2.2 : w / 2 + 1.7; x += Math.sin(ang) * sd; z -= Math.cos(ang) * sd; y += up ? .4 : -.4; add(x, y, z, 3, 3, 's')}
+            pw = 3;
+          }
+        }
       }
-      lowest = Math.min(...boxes.map(b => b.y)) - .6; lava.position.y = lowest - 8.3;
+      lowest = Math.min(...boxes.filter(b => b.hy < 1).map(b => b.y)) - .6; lava.position.set(boxes[boxes.length - 1].x / 2, lowest - 8.3, boxes[boxes.length - 1].z / 2);
       for (let i = 0; i < 70; i++) {
         const b = boxes[(r() * boxes.length) | 0], a = r() * 6.28, dd = 16 + r() * 45, px = b.x + Math.cos(a) * dd, pz = b.z + Math.sin(a) * dd; if (boxes.some(q => Math.hypot(q.x - px, q.z - pz) < 14)) continue;
         const w = 4 + r() * 9, h = b.y + (r() - .6) * 32 - (lowest - 8.3); if (h < 4) continue; const m = box(w, h, w, mat.s); m.position.set(px, lowest - 8.3 + h / 2, pz); m.castShadow = m.receiveShadow = true; G.add(m)
@@ -317,50 +342,66 @@
       spawn.set(0, .62, 0); P.yaw = Math.atan2(-boxes[1].x, -boxes[1].z); P.pitch = -.1; respawn()
     }
     // ---------- jugador ----------
-    const P = {p: new THREE.Vector3(), v: new THREE.Vector3(), yaw: 0, pitch: 0, ground: null, coy: 0, buf: 0, r: .35, h: 1.75};
-    function respawn() {P.p.copy(spawn); P.v.set(0, 0, 0); P.ground = null; boxes.forEach(b => {b.t0 = 0; b.on = true; b.m.visible = true})}
+    const P = {p: new THREE.Vector3(), v: new THREE.Vector3(), yaw: 0, pitch: 0, ground: null, coy: 0, buf: 0, r: .35, h: 1.75, air: 1, dash: 0, dc: 0, fx: 0, fz: 0, cr: false, eye: 1.62, climb: null};
+    function respawn() {P.p.copy(spawn); P.v.set(0, 0, 0); P.ground = null; P.dash = 0; P.air = 1; P.climb = null; P.cr = false; P.h = 1.75; boxes.forEach(b => {b.t0 = 0; b.on = true; b.m.visible = true})}
     function mv(ax, d) {
       P.p[ax] += d; for (const b of boxes) {
         if (!b.on) continue;
         if (Math.abs(P.p.x - b.x) < b.hx + P.r && Math.abs(P.p.z - b.z) < b.hz + P.r && P.p.y < b.y + b.hy && P.p.y + P.h > b.y - b.hy) {
           const top = b.y + b.hy;
           if (ax === 'y') {if (d < 0) {P.p.y = top; P.v.y = 0; lnd = b} else {P.p.y = b.y - b.hy - P.h; P.v.y = 0} }
-          else {if (top - P.p.y < .45) {P.p.y = top; continue} P[ax === 'x' ? 'v' : 'v'][ax] = 0; P.p[ax] = d > 0 ? b[ax] - b['h' + ax] - P.r : b[ax] + b['h' + ax] + P.r}
+          else {if (top - P.p.y < .45) {P.p.y = top; continue} const hh = b['h' + ax] + P.r, pv = P.p[ax] - d - b[ax], sd = Math.abs(pv) >= hh - .001 ? pv : P.p[ax] - b[ax]; P.v[ax] = 0; P.p[ax] = (sd === 0 ? d <= 0 : sd > 0) ? b[ax] + hh : b[ax] - hh}
         }
       }
     }
     function plat() {
+      for (const h of haz) {h.a = h.spin ? clk * h.sp + h.ph : 0; h.oz = h.spin ? 0 : Math.sin(clk * h.sp + h.ph) * h.amp; h.m.position.set(h.cx, h.cy, h.cz + h.oz); h.m.rotation.y = -h.a}
       for (const b of boxes) {
         const ox = b.x, oy = b.y, oz = b.z;
         if (b.mv) {const s = Math.sin(clk * b.mv.sp + b.mv.ph) * b.mv.amp; b.x = b.ox + b.mv.ax[0] * s; b.y = b.oy + b.mv.ax[1] * s; b.z = b.oz + b.mv.ax[2] * s}
-        b.dx = b.x - ox; b.dy = b.y - oy; b.dz = b.z - oz; let sh = 0;
+        b.dx = b.x - ox; b.dy = b.y - oy; b.dz = b.z - oz; if (!b.in) {b.in = 1; b.dx = b.dy = b.dz = 0} let sh = 0;
         if (b.ty === 'k' && b.t0) {const e = clk - b.t0; if (e < .7) sh = (Math.random() - .5) * .1; else if (e < 3.5) {if (b.on) {b.on = false; b.m.visible = false} } else {b.on = true; b.m.visible = true; b.t0 = 0} }
         b.m.position.set(b.x + sh, b.y, b.z)
       }
     }
+    function stand() {for (const b of boxes) if (b.on && Math.abs(P.p.x - b.x) < b.hx + P.r && Math.abs(P.p.z - b.z) < b.hz + P.r && b.y - b.hy > P.p.y + .1 && b.y - b.hy < P.p.y + 1.75) return false; return true}
+    function inZ(L) {return Math.abs(P.p.x - L.cx) < L.hx && Math.abs(P.p.z - L.cz) < L.hz && P.p.y + .9 > L.y0 && P.p.y < L.y1}
     function step(dt) {
+      P.cr = !!(keys.KeyC || keys.ControlLeft) || (P.cr && !stand()); P.h = P.cr ? 1 : 1.75; P.eye += (P.h - .13 - P.eye) * Math.min(1, 12 * dt);
+      if (P.climb && !inZ(P.climb)) P.climb = null;
+      if (!P.climb && (keys.KeyW || keys.ArrowUp)) for (const L of lad) if (inZ(L) && P.p.y < L.top - .6) {P.climb = L; break}
       const g = P.ground; if (g && g.on) P.p.set(P.p.x + g.dx, P.p.y + g.dy, P.p.z + g.dz);
       const f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), s = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
       let wx = -Math.sin(P.yaw) * f + Math.cos(P.yaw) * s, wz = -Math.cos(P.yaw) * f - Math.sin(P.yaw) * s; const l = Math.hypot(wx, wz); if (l > 1) {wx /= l; wz /= l}
-      const sp = (keys.ShiftLeft || keys.ShiftRight) ? 9 : 5.5, ac = P.ground ? 55 : 16, dvx = wx * sp - P.v.x, dvz = wz * sp - P.v.z, dl = Math.hypot(dvx, dvz), m = Math.min(dl, ac * dt);
+      const sp = P.cr ? 2.8 : P.climb ? 0 : (keys.ShiftLeft || keys.ShiftRight) ? 10.5 : 5.8, ac = P.ground ? 55 : 16, dvx = wx * sp - P.v.x, dvz = wz * sp - P.v.z, dl = Math.hypot(dvx, dvz), m = Math.min(dl, ac * dt);
       if (dl > 0) {P.v.x += dvx / dl * m; P.v.z += dvz / dl * m}
       P.coy = P.ground ? .1 : P.coy - dt; P.buf -= dt;
+      if (P.ground) P.air = 1;
       if (P.buf > 0 && P.coy > 0) {P.v.y = 9.2; P.buf = P.coy = 0; P.ground = null}
+      else if (P.buf > 0 && P.air > 0 && !P.ground) {P.v.y = 8.8; P.buf = 0; P.air--}
       P.v.y = Math.max(-50, P.v.y - 24 * dt); if (!keys.Space && P.v.y > 3) P.v.y -= 40 * dt;
+      if (P.climb) {const L = P.climb, up = keys.KeyW || keys.ArrowUp, dn = keys.KeyS || keys.ArrowDown; P.air = 1; if (P.v.y > 7) P.climb = null; else if (P.p.y > L.top - .5) {P.climb = null; P.v.set(L.dx * 3.5, 3, L.dz * 3.5)} else {P.v.x = P.v.z = 0; P.v.y = (up ? 3.6 : 0) - (dn ? 3.6 : 0)}}
+      if (P.dash > 0) {P.dash -= dt; P.v.x = P.fx * 20; P.v.z = P.fz * 20; P.v.y = 0} P.dc -= dt;
       const was = !!P.ground, vy = P.v.y; lnd = null; mv('x', P.v.x * dt); mv('z', P.v.z * dt); mv('y', P.v.y * dt); P.ground = lnd;
       if (lnd) {
+        if (lnd.ty === 'j') {P.v.y = 17.5; P.ground = null; P.air = 1; toast('¡Impulso!')}
         if (!was && vy < -6) dip = Math.min(.3, -vy * .012); if (lnd.ty === 'k' && !lnd.t0) lnd.t0 = clk;
         if (lnd.ty === 'c' && cpb !== lnd) {cpb = lnd; spawn.set(lnd.x, lnd.y + .62, lnd.z); toast('Checkpoint guardado')}
         if (lnd.ty === 'g') return win()
       }
+      for (const h of haz) {
+        const ca = Math.cos(h.a), sa = Math.sin(h.a), px = P.p.x - h.cx, pz = P.p.z - h.cz - h.oz, u = Math.max(-h.L, Math.min(h.L, px * ca + pz * sa)), qx = px - u * ca, qz = pz - u * sa, dd = Math.hypot(qx, qz);
+        if (dd < .25 + P.r && P.p.y < h.cy + .4 && P.p.y + P.h > h.cy - .4) {P.v.x = dd > .01 ? qx / dd * 13 : 0; P.v.z = dd > .01 ? qz / dd * 13 : 13; P.v.y = Math.max(P.v.y, 6); P.ground = null; P.dash = 0}
+      }
       if (P.p.y < lowest - 8) {falls++; $('fl').style.transition = 'none'; $('fl').style.opacity = .85; requestAnimationFrame(() => {$('fl').style.transition = 'opacity .6s'; $('fl').style.opacity = 0}); respawn()}
       const spd = Math.hypot(P.v.x, P.v.z); if (P.ground && spd > 1) bob += dt * spd * 1.3; dip *= Math.max(0, 1 - 8 * dt);
-      C.position.set(P.p.x, P.p.y + 1.62 + Math.sin(bob * 2) * .035 * Math.min(1, spd / 5) - dip, P.p.z); C.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
+      C.position.set(P.p.x, P.p.y + P.eye + Math.sin(bob * 2) * .035 * Math.min(1, spd / 5) - dip, P.p.z); C.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
       C.fov += (72 + spd * 1.3 - C.fov) * Math.min(1, 6 * dt); C.updateProjectionMatrix();
       sun.position.set(P.p.x + 50, P.p.y + 90, P.p.z + 30); sun.target.position.copy(P.p);
-      $('h1').textContent = DN[diff] + ' · Nivel ' + lvl + '/' + NL; $('h2').textContent = fmt(time) + '   Caídas ' + falls
+      $('h1').textContent = DN[diff] + ' · Nivel ' + lvl + '/' + NL; $('h2').textContent = fmt(time) + '   Caídas ' + falls + '   Dash ' + (P.dc <= 0 ? '✔' : P.dc.toFixed(1)) + '   Doble salto ' + (P.air > 0 || P.ground ? '✔' : '·')
     }
     // ---------- flujo ----------
+    function dash() {if (state !== 'play' || P.dc > 0) return; P.dash = .17; P.dc = 1.3; P.fx = -Math.sin(P.yaw); P.fz = -Math.cos(P.yaw)}
     let tt; function toast(s) {const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => e.classList.remove('on'), 1600)}
     function start(l) {l = Math.max(1, Math.min(NL, l)); if (!ok(l)) {toast('Completa el nivel anterior'); return } lvl = l; $('home').style.display = 'none'; build(); time = 0; falls = 0; $('menu').style.display = 'none'; state = 'play'; if (R.domElement.requestPointerLock) try {R.domElement.requestPointerLock()} catch (e) { } }
     function win() {
@@ -374,7 +415,7 @@
     }
     $('cont').onclick = () => {$('menu').style.display = 'none'; state = 'play'; try {R.domElement.requestPointerLock()} catch (e) { } };
     document.addEventListener('pointerlockchange', () => {if (!document.pointerLockElement && state === 'play') menu('<h2>Pausa</h2>', true)});
-    addEventListener('keydown', e => {keys[e.code] = true; if (e.code === 'Space') {P.buf = .12; e.preventDefault()} if (e.code === 'KeyR' && state === 'play') respawn(); if (e.code === 'Escape' && state === 'play') menu('<h2>Pausa</h2>', true)});
+    addEventListener('keydown', e => {keys[e.code] = true; if (e.code === 'Space') {if (!e.repeat) P.buf = .12; e.preventDefault()} if ((e.code === 'KeyE' || e.code === 'KeyQ') && !e.repeat) dash(); if (e.code === 'KeyR' && state === 'play') respawn(); if (e.code === 'Escape' && state === 'play') menu('<h2>Pausa</h2>', true)});
     addEventListener('keyup', e => keys[e.code] = false); addEventListener('blur', () => keys = {});
     addEventListener('mousedown', () => drag = true); addEventListener('mouseup', () => drag = false);
     addEventListener('mousemove', e => {if (state !== 'play' || !(document.pointerLockElement || drag)) return; P.yaw -= e.movementX * .0022; P.pitch = Math.max(-1.5, Math.min(1.5, P.pitch - e.movementY * .0022))});
@@ -514,12 +555,14 @@ body{touch-action:manipulation}
     look: (dx, dy) => {P.yaw -= dx * .005; P.pitch = Math.max(-1.5, Math.min(1.5, P.pitch - dy * .005))},
     buttons: [
       {txt: 'SALTAR', size: 19, fs: 4, pos: 'right:5vmin;bottom:11vmin', down() {keys.Space = true; P.buf = .12}, up() {keys.Space = false}},
+      {txt: 'AGACHAR', size: 14, fs: 3, pos: 'right:25vmin;bottom:23vmin', down() {keys.KeyC = true}, up() {keys.KeyC = false}},
+      {txt: 'DASH', size: 14, fs: 3.4, pos: 'right:27vmin;bottom:6vmin', down() {dash()}},
       {txt: 'II', pill: 1, size: 8, pos: 'right:2vmin;top:2vmin', down() {if (state === 'play') menu('<h2>Pausa</h2>', true)}},
       {txt: 'CHECKPOINT', pill: 1, size: 8, fs: 2.8, pos: 'right:14vmin;top:2vmin', down() {if (state === 'play') respawn()}}
     ],
     onEnable() {
       const p = document.querySelector('#pn > p.s:last-child');
-      if (p) p.textContent = 'Joystick izquierdo: mover (llévalo hasta el borde para correr) · Arrastra por la mitad derecha de la pantalla para mirar · SALTAR (mantén pulsado para saltar más alto) · CHECKPOINT vuelve al último punto guardado · II pausa. Llega a la plataforma verde sin caer a la lava.';
+      if (p) p.textContent = 'Joystick izquierdo: mover (llévalo hasta el borde para correr) · Arrastra por la mitad derecha de la pantalla para mirar · SALTAR (otra vez en el aire = doble salto) · DASH impulso rápido · AGACHAR (mantén) para pasar bajo vigas · joystick arriba para trepar escaleras de mano · CHECKPOINT vuelve al último punto guardado · II pausa. Llega a la plataforma verde sin caer a la lava.';
     }
   });
 })();
