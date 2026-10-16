@@ -244,7 +244,7 @@
   <div id="home">
     <div id="hp">
       <h1>Parkour</h1>
-      <p class="s">Parkour 3D en primera persona. 5 dificultades, 50 niveles cada una. Doble salto, dash, agacharte, escaleras de mano y obstáculos mortales. Infernal es casi imposible.</p>
+      <p class="s">Parkour 3D en primera persona. 5 dificultades, 50 niveles cada una. Doble salto, dash, escaleras de mano y obstáculos mortales. Infernal es casi imposible.</p>
       <div id="hb"><button class="on" onclick="play()">Jugar</button><button onclick="levels()">Seleccionar
           nivel</button></div>
       <div id="hd"></div>
@@ -258,7 +258,7 @@
         de inicio</button>
       <div id="ds"></div>
       <div id="gr"></div>
-      <p class="s">W A S D mover · Shift correr · Espacio saltar (mantén para saltar más alto; otra pulsación en el aire = doble salto) · Q/E dash · C agacharte (para pasar bajo vigas y túneles) · W junto a una escalera de mano para trepar (Espacio para soltarte) · plataformas rosas = impulso · esquiva barras y paredes móviles · R volver al último
+      <p class="s">W A S D mover · Shift correr · Espacio saltar (mantén para saltar más alto; otra pulsación en el aire = doble salto) · Q/E dash · W junto a una escalera de mano para trepar (Espacio para soltarte) · plataformas rosas = impulso · esquiva barras y paredes móviles · R volver al último
         checkpoint · Esc pausa. Si el ratón no se bloquea, arrastra para mirar. Llega a la plataforma verde sin caer a
         la lava.</p>
     </div>
@@ -296,8 +296,7 @@
       const r = rng(lvl * 977 + diff * 131 + 7), t = (lvl - 1) / (NL - 1), n = 18 + lvl * 2 + diff * 8; let x = 0, y = 0, z = 0, ang = 0, pw = 7, pt = 's', lh = 0; haz = []; lad = [];
       const add = (x, y, z, w, d, ty) => {const b = {x, y, z, hx: w / 2, hy: .6, hz: d / 2, ty, on: true, ox: x, oy: y, oz: z, dx: 0, dy: 0, dz: 0, t0: 0}, m = box(w, 1.2, d, mat[ty]); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; G.add(m); b.m = m; boxes.push(b); return b};
       const slab = (cx, yy, cz, W, H, D, ty, mk) => {const m = box(W, H, D, mat[mk]); m.position.set(cx, yy, cz); m.castShadow = m.receiveShadow = true; G.add(m); boxes.push({x: cx, y: yy, z: cz, hx: W / 2, hy: H / 2, hz: D / 2, ty, on: true, ox: cx, oy: yy, oz: cz, dx: 0, dy: 0, dz: 0, t0: 0, m})};
-      const tun = b => slab(b.x, b.y + b.hy + 4.75, b.z, b.hx * 2 + 10, 7, 3, 'w', 'm');
-      const hz = b => {const spin = r() < .5, hi = r() < .45, L = spin ? b.hx + .6 : b.hx, m = new THREE.Mesh(new THREE.BoxGeometry(2 * L, .8, .5), mat.h); m.castShadow = true; G.add(m); haz.push({m, cx: b.x, cy: b.y + b.hy + (hi ? 1.45 : .4), cz: b.z, L, spin, a: 0, oz: 0, ph: r() * 6.28, sp: (.9 + r() * .7 + t * .9) * (1 + diff * .2) * (r() < .5 ? 1 : -1), amp: b.hz - .5})};
+      const hz = b => {const spin = r() < .5, _hi = r(), L = spin ? b.hx + .6 : b.hx, m = new THREE.Mesh(new THREE.BoxGeometry(2 * L, .8, .5), mat.h); m.castShadow = true; G.add(m); haz.push({m, cx: b.x, cy: b.y + b.hy + .4, cz: b.z, L, spin, a: 0, oz: 0, ph: r() * 6.28, sp: (.9 + r() * .7 + t * .9) * (1 + diff * .2) * (r() < .5 ? 1 : -1), amp: b.hz - .5})};
       const lad1 = (b, H) => {
         const ax = Math.abs(Math.sin(ang)) > Math.abs(Math.cos(ang)), dx = ax ? (Math.sin(ang) < 0 ? -1 : 1) : 0, dz = ax ? 0 : (Math.cos(ang) > 0 ? -1 : 1), top = b.y + b.hy, tx = b.x + dx * (b.hx + 1.52), tz = b.z + dz * (b.hz + 1.52);
         slab(tx, top + H - (H + 12) / 2, tz, 3, H + 12, 3, 's', 'k');
@@ -321,7 +320,7 @@
         const d = pw / 2 + gap + w / 2; x += Math.sin(ang) * d; z -= Math.cos(ang) * d; y += dy;
         const b = add(x, y, z, w, w, ty);
         if (ty === 'm') {const v = r() < .3; b.mv = {ax: v ? [0, 1, 0] : [Math.cos(ang), 0, Math.sin(ang)], amp: v ? 1.2 : 2 + r() * 1.2, sp: .6 + r() * .6 + t * .4 + diff * .12, ph: r() * 6.28}}
-        else if (sp === 1) hz(b); else if (sp === 2) tun(b);
+        else if (sp === 1) hz(b); ;
         pt = ty; pw = w;
         if (ty === 's' && !sp && !last && i < n - 1) {
           const q = r();
@@ -342,8 +341,8 @@
       spawn.set(0, .62, 0); P.yaw = Math.atan2(-boxes[1].x, -boxes[1].z); P.pitch = -.1; respawn()
     }
     // ---------- jugador ----------
-    const P = {p: new THREE.Vector3(), v: new THREE.Vector3(), yaw: 0, pitch: 0, ground: null, coy: 0, buf: 0, r: .35, h: 1.75, air: 1, dash: 0, dc: 0, fx: 0, fz: 0, cr: false, eye: 1.62, climb: null};
-    function respawn() {P.p.copy(spawn); P.v.set(0, 0, 0); P.ground = null; P.dash = 0; P.air = 1; P.climb = null; P.cr = false; P.h = 1.75; boxes.forEach(b => {b.t0 = 0; b.on = true; b.m.visible = true})}
+    const P = {p: new THREE.Vector3(), v: new THREE.Vector3(), yaw: 0, pitch: 0, ground: null, coy: 0, buf: 0, r: .35, h: 1.75, air: 1, dash: 0, dc: 0, fx: 0, fz: 0, eye: 1.62, climb: null};
+    function respawn() {P.p.copy(spawn); P.v.set(0, 0, 0); P.ground = null; P.dash = 0; P.air = 1; P.climb = null; boxes.forEach(b => {b.t0 = 0; b.on = true; b.m.visible = true})}
     function mv(ax, d) {
       P.p[ax] += d; for (const b of boxes) {
         if (!b.on) continue;
@@ -364,16 +363,14 @@
         b.m.position.set(b.x + sh, b.y, b.z)
       }
     }
-    function stand() {for (const b of boxes) if (b.on && Math.abs(P.p.x - b.x) < b.hx + P.r && Math.abs(P.p.z - b.z) < b.hz + P.r && b.y - b.hy > P.p.y + .1 && b.y - b.hy < P.p.y + 1.75) return false; return true}
     function inZ(L) {return Math.abs(P.p.x - L.cx) < L.hx && Math.abs(P.p.z - L.cz) < L.hz && P.p.y + .9 > L.y0 && P.p.y < L.y1}
     function step(dt) {
-      P.cr = !!(keys.KeyC || keys.ControlLeft) || (P.cr && !stand()); P.h = P.cr ? 1 : 1.75; P.eye += (P.h - .13 - P.eye) * Math.min(1, 12 * dt);
       if (P.climb && !inZ(P.climb)) P.climb = null;
       if (!P.climb && (keys.KeyW || keys.ArrowUp)) for (const L of lad) if (inZ(L) && P.p.y < L.top - .6) {P.climb = L; break}
       const g = P.ground; if (g && g.on) P.p.set(P.p.x + g.dx, P.p.y + g.dy, P.p.z + g.dz);
       const f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), s = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
       let wx = -Math.sin(P.yaw) * f + Math.cos(P.yaw) * s, wz = -Math.cos(P.yaw) * f - Math.sin(P.yaw) * s; const l = Math.hypot(wx, wz); if (l > 1) {wx /= l; wz /= l}
-      const sp = P.cr ? 2.8 : P.climb ? 0 : (keys.ShiftLeft || keys.ShiftRight) ? 10.5 : 5.8, ac = P.ground ? 55 : 16, dvx = wx * sp - P.v.x, dvz = wz * sp - P.v.z, dl = Math.hypot(dvx, dvz), m = Math.min(dl, ac * dt);
+      const sp = P.climb ? 0 : (keys.ShiftLeft || keys.ShiftRight) ? 10.5 : 5.8, ac = P.ground ? 55 : 16, dvx = wx * sp - P.v.x, dvz = wz * sp - P.v.z, dl = Math.hypot(dvx, dvz), m = Math.min(dl, ac * dt);
       if (dl > 0) {P.v.x += dvx / dl * m; P.v.z += dvz / dl * m}
       P.coy = P.ground ? .1 : P.coy - dt; P.buf -= dt;
       if (P.ground) P.air = 1;
@@ -555,14 +552,13 @@ body{touch-action:manipulation}
     look: (dx, dy) => {P.yaw -= dx * .005; P.pitch = Math.max(-1.5, Math.min(1.5, P.pitch - dy * .005))},
     buttons: [
       {txt: 'SALTAR', size: 19, fs: 4, pos: 'right:5vmin;bottom:11vmin', down() {keys.Space = true; P.buf = .12}, up() {keys.Space = false}},
-      {txt: 'AGACHAR', size: 14, fs: 3, pos: 'right:25vmin;bottom:23vmin', down() {keys.KeyC = true}, up() {keys.KeyC = false}},
       {txt: 'DASH', size: 14, fs: 3.4, pos: 'right:27vmin;bottom:6vmin', down() {dash()}},
       {txt: 'II', pill: 1, size: 8, pos: 'right:2vmin;top:2vmin', down() {if (state === 'play') menu('<h2>Pausa</h2>', true)}},
       {txt: 'CHECKPOINT', pill: 1, size: 8, fs: 2.8, pos: 'right:14vmin;top:2vmin', down() {if (state === 'play') respawn()}}
     ],
     onEnable() {
       const p = document.querySelector('#pn > p.s:last-child');
-      if (p) p.textContent = 'Joystick izquierdo: mover (llévalo hasta el borde para correr) · Arrastra por la mitad derecha de la pantalla para mirar · SALTAR (otra vez en el aire = doble salto) · DASH impulso rápido · AGACHAR (mantén) para pasar bajo vigas · joystick arriba para trepar escaleras de mano · CHECKPOINT vuelve al último punto guardado · II pausa. Llega a la plataforma verde sin caer a la lava.';
+      if (p) p.textContent = 'Joystick izquierdo: mover (llévalo hasta el borde para correr) · Arrastra por la mitad derecha de la pantalla para mirar · SALTAR (otra vez en el aire = doble salto) · DASH impulso rápido · joystick arriba para trepar escaleras de mano · CHECKPOINT vuelve al último punto guardado · II pausa. Llega a la plataforma verde sin caer a la lava.';
     }
   });
 })();
