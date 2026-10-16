@@ -384,6 +384,31 @@
     }
     addEventListener('keydown', e => key(e, 1)); addEventListener('keyup', e => key(e, 0));
 
+    /* ---------- guardado de progreso (localStorage) ---------- */
+    const SAVE_KEY = 'robot_arena_save_v1';
+    const saveData = () => JSON.stringify({coins, unlocked, stars, ownW, ownS, wL, selW, selS, diff});
+    function loadSave() {
+      try {
+        const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (!d) return;
+        const num = (v, a, b, f) => Number.isFinite(v) ? clamp(Math.floor(v), a, b) : f;
+        coins = num(d.coins, 0, 1e9, 0);
+        if (Array.isArray(d.unlocked)) for (let i = 0; i < 3; i++) unlocked[i] = num(d.unlocked[i], 1, 50, 1);
+        if (Array.isArray(d.stars)) for (let i = 0; i < 3; i++) if (Array.isArray(d.stars[i])) for (let j = 1; j <= 50; j++) stars[i][j] = num(d.stars[i][j], 0, 3, 0);
+        if (Array.isArray(d.ownW)) for (let i = 0; i < ownW.length; i++) ownW[i] = d.ownW[i] ? 1 : 0; ownW[0] = 1;
+        if (Array.isArray(d.ownS)) for (let i = 0; i < ownS.length; i++) ownS[i] = d.ownS[i] ? 1 : 0; ownS[0] = 1;
+        if (Array.isArray(d.wL)) for (let i = 0; i < wL.length; i++) wL[i] = num(d.wL[i], 1, 8, 1);
+        selW = num(d.selW, 0, wN.length - 1, 0); if (!ownW[selW]) selW = 0;
+        selS = num(d.selS, 0, sN.length - 1, 0); if (!ownS[selS]) selS = 0;
+        diff = num(d.diff, 0, 2, 1);
+      } catch (e) { }
+    }
+    let lastSaved = '';
+    function persist() {try {const v = saveData(); if (v !== lastSaved) {localStorage.setItem(SAVE_KEY, v); lastSaved = v} } catch (e) { } }
+    loadSave(); lastSaved = saveData();
+    setInterval(persist, 1000);
+    addEventListener('pagehide', persist); addEventListener('beforeunload', persist);
+    document.addEventListener('visibilitychange', () => {if (document.hidden) persist()});
+
     /* ---------- bucle (60 FPS fijos) ---------- */
     player = new Player(W / 2, H / 2); let last = performance.now(), acc = 0;
     function loop(n) {acc += Math.min(100, n - last); last = n; while (acc >= 16.667) {update(); acc -= 16.667} draw(); requestAnimationFrame(loop)}
