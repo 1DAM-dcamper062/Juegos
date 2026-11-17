@@ -624,7 +624,7 @@
         if (S.lv == g.li && S.lv < NL - 1) S.lv++; msg = `🏁 ¡Nivel completado! +${bn} 🪙 de premio y ${g.c} 🪙 recogidas`
       }
       else msg = `💥 Te has estrellado. Recogiste ${g.c} 🪙`;
-      save(); G = null; toMenu(msg)
+      try{parent.postMessage({type:'score',score:Math.round(g.c * 10 * g.D.m + (win ? 200 + g.li * 40 : 0))},'*')}catch(_){} save(); G = null; toMenu(msg)
     }
     function toMenu(msg, sn) {
       scr = sn || 'sel';

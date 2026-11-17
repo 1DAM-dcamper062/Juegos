@@ -402,7 +402,7 @@
     let tt; function toast(s) {const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => e.classList.remove('on'), 1600)}
     function start(l) {l = Math.max(1, Math.min(NL, l)); if (!ok(l)) {toast('Completa el nivel anterior'); return } lvl = l; $('home').style.display = 'none'; build(); time = 0; falls = 0; $('menu').style.display = 'none'; state = 'play'; if (R.domElement.requestPointerLock) try {R.domElement.requestPointerLock()} catch (e) { } }
     function win() {
-      const k = diff + '-' + lvl; if (!best[k] || time < best[k]) {best[k] = time; save()}
+      const k = diff + '-' + lvl; if (!best[k] || time < best[k]) {best[k] = time; save()} try{parent.postMessage({type:'score',score:Math.max(100, Math.round((lvl * 100 + Math.max(0, 300 - time) * 5 - falls * 25) * (diff + 1)))},'*')}catch(_){}
       menu('<h2>Nivel ' + lvl + ' completado</h2>Tiempo ' + fmt(time) + ' · Caídas ' + falls + '<br><br>' + (lvl < NL ? '<button class="on" onclick="start(' + (lvl + 1) + ')">Siguiente nivel</button>' : 'Has terminado todos los niveles de ' + DN[diff] + '.'))
     }
     function menu(msg, pz) {

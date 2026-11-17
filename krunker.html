@@ -308,7 +308,7 @@
         function cards() {let u = 0; try {u = +localStorage.ip || 0} catch (e) { } $('cards').innerHTML = ''; LEVELS.forEach((L, i) => {const d = document.createElement('div'); d.className = 'card' + (i > u ? ' lock' : ''); d.innerHTML = `<h3>${i + 1}. ${L.n}</h3><p>${L.enemies} enemigos</p><p>${i > u ? '🔒 Bloqueada' : 'Disponible'}</p>`; if (i <= u) d.onclick = () => start(i); $('cards').appendChild(d)})}
         function start(i) {G = {state: 'play', lv: i, w: 1, kills: 0, hp: 100, ammo: WEAPONS.map(w => ({mag: w.mag, res: w.res})), cd: 0, rl: 0, spawned: 0, st: 0, last: 0, score: 0, t: 0}; build(i); setVM(); yaw = pitch = 0; fire = ads = false; cam.position.set(0, 1.7, 0); show(null); cv.requestPointerLock()}
         function end(win) {
-            G.state = 'over'; fire = false; document.exitPointerLock(); $('et').textContent = win ? 'MISIÓN CUMPLIDA' : 'HAS CAÍDO'; $('et').style.color = win ? '#c8ff5a' : '#f44'; $('ep').innerHTML = `Bajas: ${G.kills}/${LEVELS[G.lv].enemies}<br>Puntuación: ${G.score}`;
+            G.state = 'over'; try{parent.postMessage({type:'score',score:G.score},'*')}catch(_){}; fire = false; document.exitPointerLock(); $('et').textContent = win ? 'MISIÓN CUMPLIDA' : 'HAS CAÍDO'; $('et').style.color = win ? '#c8ff5a' : '#f44'; $('ep').innerHTML = `Bajas: ${G.kills}/${LEVELS[G.lv].enemies}<br>Puntuación: ${G.score}`;
             const nx = win && G.lv < LEVELS.length - 1; if (win) try {localStorage.ip = Math.max(+localStorage.ip || 0, G.lv + 1)} catch (e) { } $('nx').style.display = nx ? '' : 'none'; $('nx').onclick = () => start(G.lv + 1); show('end')
         }
         $('res').onclick = () => {G.state = 'play'; show(null); cv.requestPointerLock()};

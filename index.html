@@ -1,68 +1,368 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mis juegos</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #15171b;
-      color: #e6e6e6;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    }
-    main {
-      flex: 1;
-      width: 100%;
-      max-width: 520px;
-      margin: 0 auto;
-      padding: 12vh 20px 40px;
-    }
-    h1 {
-      margin: 0 0 6px;
-      font-size: 32px;
-      font-weight: 600;
-    }
-    .sub {
-      margin: 0 0 32px;
-      color: #8b8f98;
-    }
-    a.juego {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 16px 4px;
-      border-top: 1px solid #2a2d33;
-      color: inherit;
-      text-decoration: none;
-    }
-    a.juego:last-of-type { border-bottom: 1px solid #2a2d33; }
-    a.juego span:first-child { font-size: 20px; }
-    a.juego span:last-child { color: #8b8f98; font-size: 14px; }
-    a.juego:hover { background: #1c1f24; }
-    a.juego:hover span:first-child { color: #6ea8ff; }
-    footer {
-      text-align: center;
-      padding: 18px;
-      color: #6b6f78;
-      font-size: 13px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mis juegos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#12151c;--panel:#1a1e28;--line:#2a3040;--tx:#e9ecf2;--mut:#98a0b3;--ac:#ffcf3f;--ac-tx:#1a1400;--err:#ff7a7a;--ok:#6fe0a5}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--tx);font:16px/1.5 Figtree,system-ui,sans-serif}
+h1,h2,h3,.brand{font-family:"Chakra Petch",system-ui,sans-serif;margin:0}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:20px;padding:12px 24px;background:rgba(18,21,28,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{font-size:22px;font-weight:700;text-decoration:none;white-space:nowrap}
+nav{display:flex;gap:4px;flex:1;overflow-x:auto}
+nav a{padding:8px 14px;border-radius:8px;text-decoration:none;color:var(--mut);white-space:nowrap}
+nav a:hover{color:var(--tx)}
+nav a.on{color:var(--ac-tx);background:var(--ac);font-weight:600}
+.btn{border:1px solid var(--line);background:var(--panel);padding:8px 16px;border-radius:8px;cursor:pointer}
+.btn:hover{border-color:var(--mut)}
+.btn.pri{background:var(--ac);color:var(--ac-tx);border-color:var(--ac);font-weight:600}
+main{flex:1;width:100%;max-width:1040px;margin:0 auto;padding:32px 24px 56px}
+.view{display:none}.view.on{display:block}
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:32px;align-items:center;margin-bottom:48px}
+.hero h1{font-size:clamp(34px,6vw,56px);line-height:1.05;font-weight:700}
+.hero p{color:var(--mut);max-width:44ch;margin:14px 0 22px}
+.hero .thumb{aspect-ratio:16/10;border-radius:14px}
+h2{font-size:24px;margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;text-align:left;padding:0;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--ac);transform:translateY(-3px)}
+.thumb{position:relative;aspect-ratio:16/10;overflow:hidden;background:#222}
+.thumb svg,.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.card .info{padding:14px 16px 16px}
+.card h3{font-size:19px}
+.card p{margin:4px 0 0;color:var(--mut);font-size:14px}
+.chip{display:inline-block;margin-top:10px;padding:2px 10px;border-radius:99px;background:#252b3a;color:var(--mut);font-size:12px}
+.stats{display:flex;gap:32px;flex-wrap:wrap;margin:0 0 40px;padding:18px 0;border-block:1px solid var(--line)}
+.stats b{display:block;font:600 26px "Chakra Petch",sans-serif}
+.stats span{color:var(--mut);font-size:14px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:500;font-size:14px}
+td.n{width:48px;color:var(--mut)}
+tr.me td{color:var(--ac);font-weight:600}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tabs button{padding:6px 14px;border-radius:99px;border:1px solid var(--line);background:none;cursor:pointer;color:var(--mut)}
+.tabs button.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+label{display:block;margin:0 0 14px;color:var(--mut);font-size:14px}
+input,select,textarea{display:block;width:100%;margin-top:6px;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+textarea{min-height:130px;resize:vertical}
+.msg{min-height:22px;margin:10px 0 0;font-size:14px}
+.msg.err{color:var(--err)}.msg.ok{color:var(--ok)}
+.empty{color:var(--mut);padding:18px 0}
+.note{background:#2a2410;border:1px solid #5a4a14;color:#f0d98a;border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:24px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--tx);padding:26px;width:min(380px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog h2{margin-bottom:14px}
+.row{display:flex;gap:10px;margin-top:6px}
+.link{background:none;border:0;color:var(--ac);cursor:pointer;padding:0}
+#player{position:fixed;inset:0;z-index:50;background:#000;display:none;flex-direction:column}
+#player.on{display:flex}
+#bar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+#bar strong{font-family:"Chakra Petch",sans-serif;flex:1}
+#frame{flex:1;border:0;width:100%;background:#000}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:var(--ac);color:var(--ac-tx);padding:10px 18px;border-radius:99px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s}
+#toast.on{opacity:1}
+footer{text-align:center;padding:20px;color:var(--mut);font-size:13px;border-top:1px solid var(--line)}
+@media(max-width:720px){.hero{grid-template-columns:1fr}header{padding:10px 14px;gap:10px}main{padding:22px 16px 40px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
 </head>
 <body>
-  <main>
-    <h1>Mis juegos</h1>
-    <p class="sub">Elige uno para jugar.</p>
+<header>
+  <a class="brand" href="#inicio">Mis juegos</a>
+  <nav id="nav">
+    <a href="#inicio" data-v="inicio">Inicio</a>
+    <a href="#juegos" data-v="juegos">Juegos</a>
+    <a href="#clasificacion" data-v="clasificacion">Clasificación</a>
+    <a href="#bug" data-v="bug">Reportar un bug</a>
+  </nav>
+  <button class="btn" id="accBtn">Entrar</button>
+</header>
 
-    <a class="juego" href="Parkour.html"><span>Parkour</span><span></span></a>
-    <a class="juego" href="Robot.html"><span>Robot</span><span></span></a>
-    <a class="juego" href="krunker.html"><span>Krunker</span><span></span></a>
-    <a class="juego" href="moto3d.html"><span>Moto 3D</span><span></span></a>
-  </main>
-  <footer>Creado por David Camacho</footer>
+<main>
+  <div id="localNote" class="note" hidden>Modo local: las cuentas y el progreso se guardan solo en este dispositivo. Para sincronizar entre dispositivos, conecta Supabase (ver supabase.sql).</div>
+
+  <section class="view" id="v-inicio">
+    <div class="hero">
+      <div>
+        <h1 id="hello">Elige un juego y empieza a jugar</h1>
+        <p id="heroTxt">Crea una cuenta para guardar tu progreso y aparecer en la clasificación desde cualquier dispositivo.</p>
+        <button class="btn pri" id="heroPlay">Jugar ahora</button>
+      </div>
+      <div class="thumb" id="heroThumb"></div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <h2 id="contTitle">Todos los juegos</h2>
+    <div class="grid" id="homeGrid"></div>
+  </section>
+
+  <section class="view" id="v-juegos">
+    <h2>Juegos disponibles</h2>
+    <div class="grid" id="allGrid"></div>
+  </section>
+
+  <section class="view" id="v-clasificacion">
+    <h2>Clasificación</h2>
+    <div class="tabs" id="lbTabs"></div>
+    <div class="box"><div id="lbBody"></div></div>
+  </section>
+
+  <section class="view" id="v-bug">
+    <h2>Reportar un bug</h2>
+    <div class="box" style="max-width:560px">
+      <label>Juego<select id="bugGame"></select></label>
+      <label>¿Qué ha pasado?<textarea id="bugTxt" placeholder="Describe qué hacías y qué falló. Indica si juegas en móvil o PC."></textarea></label>
+      <button class="btn pri" id="bugSend">Enviar reporte</button>
+      <p class="msg" id="bugMsg"></p>
+    </div>
+  </section>
+</main>
+<footer>Creado por David Camacho</footer>
+
+<dialog id="dlg">
+  <h2 id="dTitle">Entrar</h2>
+  <form method="dialog" id="dForm">
+    <label>Usuario<input id="dUser" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" required></label>
+    <label>Contraseña<input id="dPass" type="password" autocomplete="current-password" minlength="6" required></label>
+    <div class="row"><button class="btn pri" id="dOk" type="submit">Entrar</button><button class="btn" type="button" id="dCancel">Cancelar</button></div>
+    <p class="msg" id="dMsg"></p>
+    <button class="link" type="button" id="dSwitch">¿No tienes cuenta? Crear una</button>
+  </form>
+</dialog>
+
+<div id="player">
+  <div id="bar"><strong id="pName"></strong><span id="pScore" style="color:var(--mut)"></span><button class="btn" id="pFull">Pantalla completa</button><button class="btn pri" id="pExit">Salir</button></div>
+  <iframe id="frame" allow="fullscreen; gamepad; autoplay" title="Juego"></iframe>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ===== Configuración =====
+   Rellena estos dos valores con los de tu proyecto de Supabase para que las
+   cuentas, el progreso y la clasificación se guarden en la nube.
+   Si los dejas vacíos, todo se guarda solo en este navegador. */
+const CFG = { URL: "https://alycuwszzqsjvyfiadze.supabase.co", KEY: "sb_publishable_dpzBOLYXFY0422OfCpgelQ_X-gi55gf" };
+
+const GAMES = [
+  { id:"Parkour", file:"Parkour.html", name:"Parkour", tag:"Acción", desc:"Corre y salta entre tejados sin caer." },
+  { id:"Robot",   file:"Robot.html",   name:"Robot",   tag:"Aventura", desc:"Controla a tu robot y supera cada reto." },
+  { id:"krunker", file:"krunker.html", name:"Krunker", tag:"Shooter 3D", desc:"Disparos rápidos en primera persona." },
+  { id:"moto3d",  file:"moto3d.html",  name:"Moto 3D", tag:"Carreras", desc:"Acelera, esquiva y mejora tu moto." }
+];
+
+/* ===== Miniaturas (SVG propio; si existe miniaturas/<id>.jpg se usa esa imagen) ===== */
+const ART = {
+  Parkour:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a5c"/><stop offset="1" stop-color="#ffe29a"/></linearGradient></defs><rect width="160" height="100" fill="url(#a)"/><circle cx="118" cy="30" r="14" fill="#fff6d6"/><g fill="#2b2f45"><rect x="0" y="62" width="48" height="40"/><rect x="62" y="48" width="40" height="54"/><rect x="116" y="68" width="48" height="34"/></g><g fill="#12151c"><circle cx="76" cy="36" r="4.5"/><path d="M76 41l-3 9-6 3m6-12l5 7 6-2m-8 3l-1 8 5 3m-4-11l-5 8"  stroke="#12151c" stroke-width="2.4" fill="none" stroke-linecap="round"/></g></svg>`,
+  Robot:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><rect width="160" height="100" fill="#1d2a3a"/><path d="M0 84h160v16H0z" fill="#2c3f55"/><g><rect x="58" y="22" width="44" height="34" rx="7" fill="#9fb4c9"/><rect x="66" y="31" width="10" height="10" rx="2" fill="#ffcf3f"/><rect x="84" y="31" width="10" height="10" rx="2" fill="#ffcf3f"/><rect x="72" y="47" width="16" height="3" fill="#41536a"/><rect x="64" y="58" width="32" height="22" rx="4" fill="#7d93ab"/><rect x="77" y="12" width="3" height="10" fill="#9fb4c9"/><circle cx="78.5" cy="11" r="3.5" fill="#ff7a7a"/></g></svg>`,
+  krunker:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3c4a6b"/><stop offset="1" stop-color="#1a1f2e"/></linearGradient></defs><rect width="160" height="100" fill="url(#k)"/><path d="M0 70L160 70M0 100L40 70M50 100L65 70M110 100L95 70M160 100L120 70" stroke="#4c5a7c" stroke-width="1" fill="none"/><rect x="104" y="40" width="26" height="30" fill="#59627f"/><rect x="26" y="50" width="22" height="20" fill="#59627f"/><g stroke="#ffcf3f" stroke-width="2.4" stroke-linecap="round"><path d="M80 38v8M80 56v8M66 51h8M86 51h8"/></g><circle cx="80" cy="51" r="1.8" fill="#ff7a7a"/></svg>`,
+  moto3d:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2d1b4e"/><stop offset="1" stop-color="#e0527a"/></linearGradient></defs><rect width="160" height="100" fill="url(#m)"/><circle cx="80" cy="44" r="18" fill="#ffcf3f" opacity=".9"/><path d="M0 100L66 50h28l66 50z" fill="#1a1d28"/><path d="M80 52v6M80 64v8M80 78v14" stroke="#f1f1f1" stroke-width="2.4"/><g fill="none" stroke="#fff" stroke-width="3"><circle cx="68" cy="84" r="8"/><circle cx="96" cy="84" r="8"/><path d="M68 84l12-14h10l6 14" stroke="#ffcf3f"/></g></svg>`
+};
+const thumb = id => `<img src="miniaturas/${id}.jpg" alt="" loading="lazy" onerror="this.remove()">` + ART[id];
+
+/* ===== Datos: Supabase o local ===== */
+const remote = !!(CFG.URL && CFG.KEY);
+const LS = (k, v) => v === undefined ? JSON.parse(localStorage.getItem(k) || "null") : localStorage.setItem(k, JSON.stringify(v));
+let SES = LS("g_session");           // {uid, name, token}
+let PROG = LS("g_prog_" + (SES?.uid || "guest")) || {};   // {gameId:{plays,best,secs,last}}
+
+async function sb(path, opt = {}) {
+  const r = await fetch(CFG.URL + path, { ...opt, headers: { apikey: CFG.KEY, "Content-Type": "application/json", ...(SES?.token ? { Authorization: "Bearer " + SES.token } : {}), ...opt.headers } });
+  const j = r.status === 204 ? null : await r.json().catch(() => null);
+  if (!r.ok) throw new Error(j?.msg || j?.error_description || j?.message || "Error " + r.status);
+  return j;
+}
+const mail = u => u.toLowerCase() + "@juegos.app";
+const hash = async s => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, "0")).join("");
+
+const API = {
+  async signup(u, p) {
+    if (remote) {
+      const j = await sb("/auth/v1/signup", { method: "POST", body: JSON.stringify({ email: mail(u), password: p, data: { username: u } }) });
+      if (!j.access_token) throw new Error("Desactiva «Confirm email» en Supabase para registrar usuarios.");
+      return { uid: j.user.id, name: u, token: j.access_token };
+    }
+    const us = LS("g_users") || {};
+    if (us[u.toLowerCase()]) throw new Error("Ese usuario ya existe.");
+    us[u.toLowerCase()] = await hash(p); LS("g_users", us);
+    return { uid: "l_" + u.toLowerCase(), name: u };
+  },
+  async login(u, p) {
+    if (remote) {
+      const j = await sb("/auth/v1/token?grant_type=password", { method: "POST", body: JSON.stringify({ email: mail(u), password: p }) });
+      return { uid: j.user.id, name: j.user.user_metadata?.username || u, token: j.access_token };
+    }
+    const us = LS("g_users") || {};
+    if (us[u.toLowerCase()] !== await hash(p)) throw new Error("Usuario o contraseña incorrectos.");
+    return { uid: "l_" + u.toLowerCase(), name: u };
+  },
+  async loadProg() {
+    if (!SES) return LS("g_prog_guest") || {};
+    if (!remote) return LS("g_prog_" + SES.uid) || {};
+    const r = await sb(`/rest/v1/progress?user_id=eq.${SES.uid}&select=data`);
+    return r[0]?.data || {};
+  },
+  async saveProg() {
+    LS("g_prog_" + (SES?.uid || "guest"), PROG);
+    if (remote && SES) await sb("/rest/v1/progress", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ user_id: SES.uid, data: PROG, updated_at: new Date().toISOString() }) });
+  },
+  async addScore(game, score) {
+    if (remote) return sb("/rest/v1/scores", { method: "POST", body: JSON.stringify({ game, user_id: SES.uid, username: SES.name, score }) });
+    const a = LS("g_scores") || []; a.push({ game, username: SES.name, score }); LS("g_scores", a);
+  },
+  async top(game) {
+    const rows = remote ? await sb(`/rest/v1/scores?game=eq.${game}&order=score.desc&limit=300&select=username,score`) : (LS("g_scores") || []).filter(s => s.game === game);
+    const best = new Map();
+    rows.forEach(r => { if (!best.has(r.username) || best.get(r.username) < r.score) best.set(r.username, r.score); });
+    return [...best].map(([username, score]) => ({ username, score })).sort((a, b) => b.score - a.score).slice(0, 20);
+  },
+  async addBug(game, text) {
+    if (remote) return sb("/rest/v1/bugs", { method: "POST", body: JSON.stringify({ game, text, username: SES?.name || null }) });
+    const a = LS("g_bugs") || []; a.push({ game, text, username: SES?.name || null, at: new Date().toISOString() }); LS("g_bugs", a);
+  }
+};
+
+/* ===== Utilidades ===== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtTime = s => s >= 3600 ? Math.floor(s / 3600) + " h " + Math.floor(s % 3600 / 60) + " min" : Math.max(1, Math.round(s / 60)) + " min";
+function toast(t) { const e = $("toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 2600); }
+
+/* ===== Vistas ===== */
+const card = g => `<button class="card" data-play="${g.id}"><div class="thumb">${thumb(g.id)}</div><div class="info"><h3>${g.name}</h3><p>${g.desc}</p><span class="chip">${g.tag}</span></div></button>`;
+
+function renderHome() {
+  const played = GAMES.filter(g => PROG[g.id]).sort((a, b) => PROG[b.id].last - PROG[a.id].last);
+  const feat = played[0] || GAMES[0];
+  $("hello").textContent = SES ? "Hola, " + SES.name : "Elige un juego y empieza a jugar";
+  $("heroTxt").textContent = SES ? (played[0] ? "Tu último juego fue " + feat.name + ". Sigue donde lo dejaste." : "Tu progreso se guarda en tu cuenta.") : "Crea una cuenta para guardar tu progreso y aparecer en la clasificación desde cualquier dispositivo.";
+  $("heroPlay").textContent = played[0] ? "Seguir con " + feat.name : "Jugar ahora";
+  $("heroPlay").dataset.play = feat.id;
+  $("heroThumb").innerHTML = thumb(feat.id);
+  const tot = Object.values(PROG);
+  $("stats").innerHTML = tot.length ? `<div><b>${tot.reduce((a, p) => a + p.plays, 0)}</b><span>partidas</span></div><div><b>${fmtTime(tot.reduce((a, p) => a + p.secs, 0))}</b><span>tiempo jugado</span></div><div><b>${tot.length}/${GAMES.length}</b><span>juegos probados</span></div>` : "";
+  $("contTitle").textContent = played.length ? "Tus juegos" : "Todos los juegos";
+  $("homeGrid").innerHTML = (played.length ? played : GAMES).map(g => card(g) ).join("");
+}
+function renderAll() { $("allGrid").innerHTML = GAMES.map(card).join(""); }
+
+let lbGame = GAMES[0].id;
+async function renderLB() {
+  $("lbTabs").innerHTML = GAMES.map(g => `<button class="${g.id === lbGame ? "on" : ""}" data-lb="${g.id}">${g.name}</button>`).join("");
+  $("lbBody").innerHTML = '<p class="empty">Cargando…</p>';
+  try {
+    const rows = await API.top(lbGame);
+    $("lbBody").innerHTML = rows.length ? `<table><tr><th>#</th><th>Jugador</th><th>Puntos</th></tr>${rows.map((r, i) => `<tr class="${SES && r.username === SES.name ? "me" : ""}"><td class="n">${i + 1}</td><td>${esc(r.username)}</td><td>${r.score}</td></tr>`).join("")}</table>` : '<p class="empty">Aún no hay puntuaciones. Juega una partida para ser el primero.</p>';
+  } catch (e) { $("lbBody").innerHTML = '<p class="empty">No se pudo cargar la clasificación: ' + esc(e.message) + "</p>"; }
+}
+
+function show(v) {
+  if (!["inicio", "juegos", "clasificacion", "bug"].includes(v)) v = "inicio";
+  document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.v === v));
+  if (v === "inicio") renderHome();
+  if (v === "juegos") renderAll();
+  if (v === "clasificacion") renderLB();
+  window.scrollTo(0, 0);
+}
+addEventListener("hashchange", () => show(location.hash.slice(1)));
+
+document.addEventListener("click", e => {
+  const p = e.target.closest("[data-play]"); if (p) return play(p.dataset.play);
+  const l = e.target.closest("[data-lb]"); if (l) { lbGame = l.dataset.lb; renderLB(); }
+});
+
+/* ===== Reproductor ===== */
+let cur = null;
+function play(id) {
+  const g = GAMES.find(x => x.id === id);
+  cur = { g, t0: Date.now(), best: 0 };
+  $("pName").textContent = g.name; $("pScore").textContent = "";
+  $("frame").src = g.file; $("player").classList.add("on");
+  document.body.style.overflow = "hidden";
+}
+async function closeGame() {
+  if (!cur) return;
+  const { g, t0 } = cur;
+  const p = PROG[g.id] || { plays: 0, best: 0, secs: 0, last: 0 };
+  p.plays++; p.secs += Math.round((Date.now() - t0) / 1000); p.best = Math.max(p.best, cur.best); p.last = Date.now();
+  PROG[g.id] = p; cur = null;
+  $("player").classList.remove("on"); $("frame").src = "about:blank"; document.body.style.overflow = "";
+  try { await API.saveProg(); } catch (e) { toast("No se pudo sincronizar el progreso"); }
+  show(location.hash.slice(1));
+}
+$("pExit").onclick = closeGame;
+$("pFull").onclick = () => $("player").requestFullscreen?.();
+$("heroPlay").onclick = () => play($("heroPlay").dataset.play);
+
+/* Los juegos envían su puntuación con: parent.postMessage({type:"score", score:1234}, "*") */
+addEventListener("message", async e => {
+  const d = e.data; if (!cur || !d || d.type !== "score" || !Number.isFinite(d.score)) return;
+  const s = Math.max(0, Math.round(d.score));
+  cur.best = Math.max(cur.best, s); $("pScore").textContent = "Mejor: " + cur.best;
+  if (!SES) return toast("Entra en tu cuenta para guardar puntuaciones");
+  try { await API.addScore(cur.g.id, s); toast("Puntuación guardada: " + s); } catch (err) { toast("No se pudo guardar la puntuación"); }
+});
+
+/* ===== Cuenta ===== */
+let mode = "login";
+function setMode(m) {
+  mode = m;
+  $("dTitle").textContent = m === "login" ? "Entrar" : "Crear cuenta";
+  $("dOk").textContent = m === "login" ? "Entrar" : "Crear cuenta";
+  $("dSwitch").textContent = m === "login" ? "¿No tienes cuenta? Crear una" : "¿Ya tienes cuenta? Entrar";
+  $("dPass").autocomplete = m === "login" ? "current-password" : "new-password";
+  $("dMsg").textContent = "";
+}
+function setSession(s) {
+  SES = s; s ? LS("g_session", s) : localStorage.removeItem("g_session");
+  $("accBtn").textContent = s ? s.name + " · Salir" : "Entrar";
+}
+$("accBtn").onclick = async () => {
+  if (SES) { await closeGame(); setSession(null); PROG = await API.loadProg(); toast("Sesión cerrada"); return show(location.hash.slice(1)); }
+  setMode("login"); $("dlg").showModal();
+};
+$("dSwitch").onclick = () => setMode(mode === "login" ? "signup" : "login");
+$("dCancel").onclick = () => $("dlg").close();
+$("dForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const u = $("dUser").value.trim(), p = $("dPass").value, m = $("dMsg");
+  m.className = "msg"; m.textContent = "Un momento…";
+  try {
+    const guest = LS("g_prog_guest") || {};
+    const s = await (mode === "login" ? API.login(u, p) : API.signup(u, p));
+    setSession(s);
+    const mine = await API.loadProg();
+    for (const k in guest) if (!mine[k] || guest[k].last > mine[k].last) mine[k] = guest[k];  // conserva lo jugado como invitado
+    PROG = mine; localStorage.removeItem("g_prog_guest"); await API.saveProg().catch(() => {});
+    $("dlg").close(); $("dPass").value = ""; toast("Hola, " + s.name); show(location.hash.slice(1));
+  } catch (err) { m.className = "msg err"; m.textContent = err.message; }
+});
+
+/* ===== Bugs ===== */
+$("bugGame").innerHTML = GAMES.map(g => `<option value="${g.id}">${g.name}</option>`).join("") + '<option value="web">La página</option>';
+$("bugSend").onclick = async () => {
+  const t = $("bugTxt").value.trim(), m = $("bugMsg");
+  if (t.length < 10) { m.className = "msg err"; m.textContent = "Describe el problema con al menos 10 caracteres."; return; }
+  try { await API.addBug($("bugGame").value, t); $("bugTxt").value = ""; m.className = "msg ok"; m.textContent = "Reporte enviado. Gracias."; }
+  catch (e) { m.className = "msg err"; m.textContent = "No se pudo enviar: " + e.message; }
+};
+
+/* ===== Inicio ===== */
+(async () => {
+  $("localNote").hidden = remote;
+  setSession(SES);
+  try { PROG = await API.loadProg(); LS("g_prog_" + (SES?.uid || "guest"), PROG); } catch (e) {}
+  show(location.hash.slice(1));
+})();
+</script>
 </body>
 </html>

@@ -224,7 +224,7 @@
     function beginLevel(n) {if (n < 1 || n > unlocked[diff]) return; level = n; wave = 1; wavesThis = 0; screen = PLAY; reset(); player = new Player(W / 2, H / 2); startWave()}
     function completeLevel() {
       const s = player.hp > 70 ? 3 : player.hp > 35 ? 2 : 1; stars[diff][level] = Math.max(stars[diff][level], s);
-      if (level < 50) unlocked[diff] = Math.max(unlocked[diff], level + 1); else {screen = WIN; return } selMap = Math.min(50, level + 1); screen = MAP
+      if (level < 50) unlocked[diff] = Math.max(unlocked[diff], level + 1); else {screen = WIN; try{parent.postMessage({type:'score',score:score},'*')}catch(_){}; return } selMap = Math.min(50, level + 1); screen = MAP
     }
     function startWave() {
       enemies = []; bullets = []; bossAlive = bossWave = false; wavesThis++;
@@ -261,7 +261,7 @@
       if (spawned < toSpawn) {if (--spawnT <= 0) {spawnEnemy(); spawned++; spawnT = Math.max(8, 35 - diff * 5 - (level / 4 | 0))} }
       else if (!enemies.length && (!bossWave || !bossAlive)) {trans = true; transT = 130; sfx.clear()}
       updBullets(); for (const e of enemies) {e.upd(); if (dist(e.x - player.x, e.y - player.y) < e.r + player.r) hitPlayer(e.dmg, 35)}
-      updCoins(); updFx(); if (coinPop > 0) coinPop--; if (player.hp <= 0) {screen = OVER; shooting = 0; sfx.over()}
+      updCoins(); updFx(); if (coinPop > 0) coinPop--; if (player.hp <= 0) {screen = OVER; shooting = 0; sfx.over(); try{parent.postMessage({type:'score',score:score},'*')}catch(_){}}
     }
 
     /* ---------- render ---------- */
