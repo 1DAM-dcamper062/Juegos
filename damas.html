@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Damas</title><link rel="stylesheet" href="juegos.css"></head>
+<body>
+<h1>Damas</h1>
+<div class="bar"><select id="lv"><option value="1">Fácil</option><option value="3" selected>Normal</option><option value="5">Difícil</option></select><button class="pri" id="nw">Nueva partida</button></div>
+<div id="st"></div><div class="bd" id="bd"></div>
+<script>
+/* Tú juegas con las fichas doradas (abajo). Captura obligatoria; la dama se mueve una casilla. */
+const $=id=>document.getElementById(id),sd=p=>p.toLowerCase();
+const D=p=>p=='r'?[[-1,-1],[1,-1]]:p=='b'?[[-1,1],[1,1]]:[[-1,-1],[1,-1],[-1,1],[1,1]];
+let B,sel,LM,over,hist;
+function pr(b,i){const n=[...b];if(n[i]=='r'&&i<8)n[i]='R';if(n[i]=='b'&&i>55)n[i]='B';return n}
+function jm(b,i,i0,out){let any=0;const p=b[i];
+  for(const[dx,dy]of D(p)){const x=i%8+dx,y=(i>>3)+dy,x2=x+dx,y2=y+dy;if(x2<0||x2>7||y2<0||y2>7)continue;
+    const m=b[y*8+x];
+    if(m&&sd(m)!=sd(p)&&!b[y2*8+x2]){any=1;const n=[...b];n[i]='';n[y*8+x]='';n[y2*8+x2]=p;jm(n,y2*8+x2,i0,out)}}
+  if(!any&&i!=i0)out.push({f:i0,t:i,b:pr(b,i)})}
+function mv(b,s){const j=[],o=[];
+  for(let i=0;i<64;i++){const p=b[i];if(!p||sd(p)!=s)continue;jm(b,i,i,j);
+    for(const[dx,dy]of D(p)){const x=i%8+dx,y=(i>>3)+dy;if(x<0||x>7||y<0||y>7||b[y*8+x])continue;
+      const n=[...b];n[i]='';n[y*8+x]=p;o.push({f:i,t:y*8+x,b:pr(n,y*8+x)})}}
+  return j.length?j:o}
+function ev(b){let s=0;for(let i=0;i<64;i++){const p=b[i];if(!p)continue;const y=i>>3;
+  const v=p=='r'?100+(7-y)*3:p=='b'?-(100+y*3):p=='R'?170:-170;s+=v}return s}
+function se(b,d,al,be,s){const m=mv(b,s);if(!m.length)return s=='r'?-1e5-d:1e5+d;if(!d)return ev(b);
+  let best=s=='r'?-1e9:1e9;
+  for(const x of m){const v=se(x.b,d-1,al,be,s=='r'?'b':'r');
+    if(s=='r'){best=Math.max(best,v);al=Math.max(al,v)}else{best=Math.min(best,v);be=Math.min(be,v)}
+    if(be<=al)break}
+  return best}
+function ai(){const lv=+$('lv').value;let best=1e9,pick;
+  for(const m of LM.slice().sort(()=>Math.random()-.5)){const v=se(m.b,lv-1,-1e9,1e9,'r')+(lv==1?Math.random()*120:0);if(v<best){best=v;pick=m}}
+  B=pick.b;sel=-1;next('r')}
+function next(s){LM=mv(B,s);
+  if(!LM.length){over=1;const win=s=='b';$('st').textContent=win?'¡Has ganado!':'Has perdido.';
+    if(win)try{parent.postMessage({type:'score',score:Math.max(100,1000-hist*10)},'*')}catch(_){}
+    draw();return}
+  const cap=LM.some(m=>Math.abs((m.f>>3)-(m.t>>3))==2);
+  $('st').textContent=s=='r'?(cap?'Tu turno: captura obligatoria':'Tu turno'):'Pensando…';draw();
+  if(s=='b')setTimeout(ai,350)}
+function tap(i){if(over||!LM)return;
+  const m=sel>=0&&LM.find(x=>x.f==sel&&x.t==i&&sd(B[x.f])=='r');
+  if(m){B=m.b;sel=-1;hist++;next('b');return}
+  sel=B[i]&&sd(B[i])=='r'?i:-1;draw()}
+function draw(){const bd=$('bd');bd.innerHTML='';const tg=sel>=0?LM.filter(m=>m.f==sel).map(m=>m.t):[];
+  for(let i=0;i<64;i++){const c=document.createElement('div'),p=B[i];
+    c.className=((i%8+(i>>3))%2?'d':'l')+(i==sel?' sel':'')+(tg.includes(i)?' mv':'');
+    if(p){const e=document.createElement('i');e.className='pc '+sd(p)+(p<'a'?' K':'');c.appendChild(e)}
+    c.onclick=()=>tap(i);bd.appendChild(c)}}
+function nw(){B=Array(64).fill('');
+  for(let i=0;i<64;i++){if(((i%8)+(i>>3))%2==0)continue;const y=i>>3;if(y<3)B[i]='b';if(y>4)B[i]='r'}
+  sel=-1;over=0;hist=0;next('r')}
+$('nw').onclick=nw;nw();
+</script></body></html>

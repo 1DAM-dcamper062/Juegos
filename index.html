@@ -82,7 +82,6 @@ footer{text-align:center;padding:20px;color:var(--mut);font-size:13px;border-top
   <nav id="nav">
     <a href="#inicio" data-v="inicio">Inicio</a>
     <a href="#juegos" data-v="juegos">Juegos</a>
-    <a href="#clasificacion" data-v="clasificacion">Clasificación</a>
     <a href="#bug" data-v="bug">Reportar un bug</a>
   </nav>
   <button class="btn" id="accBtn">Entrar</button>
@@ -95,7 +94,7 @@ footer{text-align:center;padding:20px;color:var(--mut);font-size:13px;border-top
     <div class="hero">
       <div>
         <h1 id="hello">Elige un juego y empieza a jugar</h1>
-        <p id="heroTxt">Crea una cuenta para guardar tu progreso y aparecer en la clasificación desde cualquier dispositivo.</p>
+        <p id="heroTxt">Crea una cuenta para guardar tu progreso y retomarlo desde cualquier dispositivo.</p>
         <button class="btn pri" id="heroPlay">Jugar ahora</button>
       </div>
       <div class="thumb" id="heroThumb"></div>
@@ -108,12 +107,6 @@ footer{text-align:center;padding:20px;color:var(--mut);font-size:13px;border-top
   <section class="view" id="v-juegos">
     <h2>Juegos disponibles</h2>
     <div class="grid" id="allGrid"></div>
-  </section>
-
-  <section class="view" id="v-clasificacion">
-    <h2>Clasificación</h2>
-    <div class="tabs" id="lbTabs"></div>
-    <div class="box"><div id="lbBody"></div></div>
   </section>
 
   <section class="view" id="v-bug">
@@ -131,7 +124,7 @@ footer{text-align:center;padding:20px;color:var(--mut);font-size:13px;border-top
 <dialog id="dlg">
   <h2 id="dTitle">Entrar</h2>
   <form method="dialog" id="dForm">
-    <label>Usuario<input id="dUser" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" required></label>
+    <label>Usuario<input id="dUser" autocomplete="username" minlength="3" maxlength="20" required></label>
     <label>Contraseña<input id="dPass" type="password" autocomplete="current-password" minlength="6" required></label>
     <div class="row"><button class="btn pri" id="dOk" type="submit">Entrar</button><button class="btn" type="button" id="dCancel">Cancelar</button></div>
     <p class="msg" id="dMsg"></p>
@@ -148,7 +141,7 @@ footer{text-align:center;padding:20px;color:var(--mut);font-size:13px;border-top
 <script>
 /* ===== Configuración =====
    Rellena estos dos valores con los de tu proyecto de Supabase para que las
-   cuentas, el progreso y la clasificación se guarden en la nube.
+   cuentas y el progreso se guarden en la nube.
    Si los dejas vacíos, todo se guarda solo en este navegador. */
 const CFG = { URL: "https://alycuwszzqsjvyfiadze.supabase.co", KEY: "sb_publishable_dpzBOLYXFY0422OfCpgelQ_X-gi55gf" };
 
@@ -156,7 +149,10 @@ const GAMES = [
   { id:"Parkour", file:"Parkour.html", name:"Parkour", tag:"Acción", desc:"Corre y salta entre tejados sin caer." },
   { id:"Robot",   file:"Robot.html",   name:"Robot",   tag:"Aventura", desc:"Controla a tu robot y supera cada reto." },
   { id:"krunker", file:"krunker.html", name:"Krunker", tag:"Shooter 3D", desc:"Disparos rápidos en primera persona." },
-  { id:"moto3d",  file:"moto3d.html",  name:"Moto 3D", tag:"Carreras", desc:"Acelera, esquiva y mejora tu moto." }
+  { id:"moto3d",  file:"moto3d.html",  name:"Moto 3D", tag:"Carreras", desc:"Acelera, esquiva y mejora tu moto." },
+  { id:"ajedrez", file:"ajedrez.html", name:"Ajedrez", tag:"Mesa", desc:"Juega con blancas contra la máquina, en tres niveles." },
+  { id:"damas",   file:"damas.html",   name:"Damas",   tag:"Mesa", desc:"Captura obligatoria y coronación de damas." },
+  { id:"parchis", file:"parchis.html", name:"Parchís", tag:"Mesa", desc:"Tú contra tres rivales. Saca un 5 y llega a meta." }
 ];
 
 /* ===== Miniaturas (SVG propio; si existe miniaturas/<id>.jpg se usa esa imagen) ===== */
@@ -165,6 +161,9 @@ const ART = {
   Robot:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><rect width="160" height="100" fill="#1d2a3a"/><path d="M0 84h160v16H0z" fill="#2c3f55"/><g><rect x="58" y="22" width="44" height="34" rx="7" fill="#9fb4c9"/><rect x="66" y="31" width="10" height="10" rx="2" fill="#ffcf3f"/><rect x="84" y="31" width="10" height="10" rx="2" fill="#ffcf3f"/><rect x="72" y="47" width="16" height="3" fill="#41536a"/><rect x="64" y="58" width="32" height="22" rx="4" fill="#7d93ab"/><rect x="77" y="12" width="3" height="10" fill="#9fb4c9"/><circle cx="78.5" cy="11" r="3.5" fill="#ff7a7a"/></g></svg>`,
   krunker:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3c4a6b"/><stop offset="1" stop-color="#1a1f2e"/></linearGradient></defs><rect width="160" height="100" fill="url(#k)"/><path d="M0 70L160 70M0 100L40 70M50 100L65 70M110 100L95 70M160 100L120 70" stroke="#4c5a7c" stroke-width="1" fill="none"/><rect x="104" y="40" width="26" height="30" fill="#59627f"/><rect x="26" y="50" width="22" height="20" fill="#59627f"/><g stroke="#ffcf3f" stroke-width="2.4" stroke-linecap="round"><path d="M80 38v8M80 56v8M66 51h8M86 51h8"/></g><circle cx="80" cy="51" r="1.8" fill="#ff7a7a"/></svg>`,
   moto3d:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2d1b4e"/><stop offset="1" stop-color="#e0527a"/></linearGradient></defs><rect width="160" height="100" fill="url(#m)"/><circle cx="80" cy="44" r="18" fill="#ffcf3f" opacity=".9"/><path d="M0 100L66 50h28l66 50z" fill="#1a1d28"/><path d="M80 52v6M80 64v8M80 78v14" stroke="#f1f1f1" stroke-width="2.4"/><g fill="none" stroke="#fff" stroke-width="3"><circle cx="68" cy="84" r="8"/><circle cx="96" cy="84" r="8"/><path d="M68 84l12-14h10l6 14" stroke="#ffcf3f"/></g></svg>`
+  ,ajedrez:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><defs><pattern id="pch" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#5b6f96"/><rect width="10" height="10" fill="#c9d3e6"/><rect x="10" y="10" width="10" height="10" fill="#c9d3e6"/></pattern></defs><rect width="160" height="100" fill="url(#pch)"/><text x="80" y="82" text-anchor="middle" font-size="78" fill="#14161c" stroke="#fff" stroke-width="2">♞</text></svg>`,
+  damas:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><defs><pattern id="pda" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#5b6f96"/><rect width="10" height="10" fill="#c9d3e6"/><rect x="10" y="10" width="10" height="10" fill="#c9d3e6"/></pattern></defs><rect width="160" height="100" fill="url(#pda)"/><g stroke="rgba(0,0,0,.3)" stroke-width="2"><circle cx="45" cy="45" r="8" fill="#ffcf3f"/><circle cx="85" cy="45" r="8" fill="#1c1f29"/><circle cx="105" cy="65" r="8" fill="#ffcf3f"/><circle cx="65" cy="25" r="8" fill="#1c1f29"/><circle cx="125" cy="45" r="8" fill="#ffcf3f"/></g></svg>`,
+  parchis:`<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><rect width="160" height="100" fill="#1a1e28"/><rect x="52" y="6" width="56" height="88" rx="10" fill="none" stroke="#303749" stroke-width="3"/><circle cx="62" cy="20" r="8" fill="#6ea8ff"/><circle cx="98" cy="20" r="8" fill="#ffcf3f"/><circle cx="62" cy="80" r="8" fill="#5ad28a"/><circle cx="98" cy="80" r="8" fill="#ff6b6b"/><rect x="68" y="34" width="24" height="32" rx="6" fill="#e9ecf2"/><g fill="#12151c"><circle cx="75" cy="42" r="3"/><circle cx="85" cy="50" r="3"/><circle cx="75" cy="58" r="3"/></g></svg>`
 };
 const thumb = id => `<img src="miniaturas/${id}.jpg" alt="" loading="lazy" onerror="this.remove()">` + ART[id];
 
@@ -180,7 +179,7 @@ async function sb(path, opt = {}) {
   if (!r.ok) throw new Error(j?.msg || j?.error_description || j?.message || "Error " + r.status);
   return j;
 }
-const mail = u => u.toLowerCase() + "@juegos.app";
+const mail = u => u.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9._-]+/g, "_") + "@juegos.app";
 const hash = async s => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, "0")).join("");
 
 const API = {
@@ -214,16 +213,6 @@ const API = {
     LS("g_prog_" + (SES?.uid || "guest"), PROG);
     if (remote && SES) await sb("/rest/v1/progress", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ user_id: SES.uid, data: PROG, updated_at: new Date().toISOString() }) });
   },
-  async addScore(game, score) {
-    if (remote) return sb("/rest/v1/scores", { method: "POST", body: JSON.stringify({ game, user_id: SES.uid, username: SES.name, score }) });
-    const a = LS("g_scores") || []; a.push({ game, username: SES.name, score }); LS("g_scores", a);
-  },
-  async top(game) {
-    const rows = remote ? await sb(`/rest/v1/scores?game=eq.${game}&order=score.desc&limit=300&select=username,score`) : (LS("g_scores") || []).filter(s => s.game === game);
-    const best = new Map();
-    rows.forEach(r => { if (!best.has(r.username) || best.get(r.username) < r.score) best.set(r.username, r.score); });
-    return [...best].map(([username, score]) => ({ username, score })).sort((a, b) => b.score - a.score).slice(0, 20);
-  },
   async addBug(game, text) {
     if (remote) return sb("/rest/v1/bugs", { method: "POST", body: JSON.stringify({ game, text, username: SES?.name || null }) });
     const a = LS("g_bugs") || []; a.push({ game, text, username: SES?.name || null, at: new Date().toISOString() }); LS("g_bugs", a);
@@ -243,7 +232,7 @@ function renderHome() {
   const played = GAMES.filter(g => PROG[g.id]).sort((a, b) => PROG[b.id].last - PROG[a.id].last);
   const feat = played[0] || GAMES[0];
   $("hello").textContent = SES ? "Hola, " + SES.name : "Elige un juego y empieza a jugar";
-  $("heroTxt").textContent = SES ? (played[0] ? "Tu último juego fue " + feat.name + ". Sigue donde lo dejaste." : "Tu progreso se guarda en tu cuenta.") : "Crea una cuenta para guardar tu progreso y aparecer en la clasificación desde cualquier dispositivo.";
+  $("heroTxt").textContent = SES ? (played[0] ? "Tu último juego fue " + feat.name + ". Sigue donde lo dejaste." : "Tu progreso se guarda en tu cuenta.") : "Crea una cuenta para guardar tu progreso y retomarlo desde cualquier dispositivo.";
   $("heroPlay").textContent = played[0] ? "Seguir con " + feat.name : "Jugar ahora";
   $("heroPlay").dataset.play = feat.id;
   $("heroThumb").innerHTML = thumb(feat.id);
@@ -254,30 +243,18 @@ function renderHome() {
 }
 function renderAll() { $("allGrid").innerHTML = GAMES.map(card).join(""); }
 
-let lbGame = GAMES[0].id;
-async function renderLB() {
-  $("lbTabs").innerHTML = GAMES.map(g => `<button class="${g.id === lbGame ? "on" : ""}" data-lb="${g.id}">${g.name}</button>`).join("");
-  $("lbBody").innerHTML = '<p class="empty">Cargando…</p>';
-  try {
-    const rows = await API.top(lbGame);
-    $("lbBody").innerHTML = rows.length ? `<table><tr><th>#</th><th>Jugador</th><th>Puntos</th></tr>${rows.map((r, i) => `<tr class="${SES && r.username === SES.name ? "me" : ""}"><td class="n">${i + 1}</td><td>${esc(r.username)}</td><td>${r.score}</td></tr>`).join("")}</table>` : '<p class="empty">Aún no hay puntuaciones. Juega una partida para ser el primero.</p>';
-  } catch (e) { $("lbBody").innerHTML = '<p class="empty">No se pudo cargar la clasificación: ' + esc(e.message) + "</p>"; }
-}
-
 function show(v) {
-  if (!["inicio", "juegos", "clasificacion", "bug"].includes(v)) v = "inicio";
+  if (!["inicio", "juegos", "bug"].includes(v)) v = "inicio";
   document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
   document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.v === v));
   if (v === "inicio") renderHome();
   if (v === "juegos") renderAll();
-  if (v === "clasificacion") renderLB();
   window.scrollTo(0, 0);
 }
 addEventListener("hashchange", () => show(location.hash.slice(1)));
 
 document.addEventListener("click", e => {
   const p = e.target.closest("[data-play]"); if (p) return play(p.dataset.play);
-  const l = e.target.closest("[data-lb]"); if (l) { lbGame = l.dataset.lb; renderLB(); }
 });
 
 /* ===== Reproductor ===== */
@@ -303,13 +280,10 @@ $("pExit").onclick = closeGame;
 $("pFull").onclick = () => $("player").requestFullscreen?.();
 $("heroPlay").onclick = () => play($("heroPlay").dataset.play);
 
-/* Los juegos envían su puntuación con: parent.postMessage({type:"score", score:1234}, "*") */
-addEventListener("message", async e => {
+/* Los juegos envían su mejor puntuación con: parent.postMessage({type:"score", score:1234}, "*") */
+addEventListener("message", e => {
   const d = e.data; if (!cur || !d || d.type !== "score" || !Number.isFinite(d.score)) return;
-  const s = Math.max(0, Math.round(d.score));
-  cur.best = Math.max(cur.best, s); $("pScore").textContent = "Mejor: " + cur.best;
-  if (!SES) return toast("Entra en tu cuenta para guardar puntuaciones");
-  try { await API.addScore(cur.g.id, s); toast("Puntuación guardada: " + s); } catch (err) { toast("No se pudo guardar la puntuación"); }
+  cur.best = Math.max(cur.best, Math.round(d.score)); $("pScore").textContent = "Mejor: " + cur.best;
 });
 
 /* ===== Cuenta ===== */

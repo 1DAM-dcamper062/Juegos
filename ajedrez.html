@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ajedrez</title><link rel="stylesheet" href="juegos.css"></head>
+<body>
+<h1>Ajedrez</h1>
+<div class="bar"><select id="lv"><option value="1">Fácil</option><option value="2" selected>Normal</option><option value="3">Difícil</option></select><button class="pri" id="nw">Nueva partida</button></div>
+<div id="st"></div><div class="bd" id="bd"></div>
+<script>
+const G={r:'♜',n:'♞',b:'♝',q:'♛',k:'♚',p:'♟'},V={p:100,n:320,b:330,r:500,q:900,k:0};
+const $=id=>document.getElementById(id);
+let B,sel,LM,over,hist;
+const own=(p,w)=>p&&(p<'a')===w;
+function ps(b,i){const x=i%8,y=i>>3,p=b[i],w=p<'a',t=p.toLowerCase(),o=[];
+  const add=(a,c)=>{if(a<0||c<0||a>7||c>7)return 0;const q=b[c*8+a];if(q&&(q<'a')===w)return 0;o.push(c*8+a);return !q};
+  if(t=='p'){const d=w?-1:1;if(!b[(y+d)*8+x]){o.push((y+d)*8+x);if(y==(w?6:1)&&!b[(y+2*d)*8+x])o.push((y+2*d)*8+x)}
+    for(const e of[-1,1]){const a=x+e;if(a>=0&&a<8){const q=b[(y+d)*8+a];if(q&&(q<'a')!==w)o.push((y+d)*8+a)}}}
+  else if(t=='n')for(const[a,c]of[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]])add(x+a,y+c);
+  else{const dr=[];if(t!='b')dr.push([1,0],[-1,0],[0,1],[0,-1]);if(t!='r')dr.push([1,1],[1,-1],[-1,1],[-1,-1]);
+    for(const[a,c]of dr){let k=1;while(add(x+a*k,y+c*k)&&t!='k')k++}}
+  return o}
+function mk(b,f,t){const n=[...b];let p=n[f];if(p=='P'&&t<8)p='Q';if(p=='p'&&t>55)p='q';n[t]=p;n[f]='';return n}
+function chk(b,w){const k=b.indexOf(w?'K':'k');for(let i=0;i<64;i++)if(own(b[i],!w)&&ps(b,i).includes(k))return true;return false}
+function lg(b,w){const m=[];for(let i=0;i<64;i++)if(own(b[i],w))for(const t of ps(b,i))if(!chk(mk(b,i,t),w))m.push([i,t]);return m}
+function ev(b){let s=0;for(let i=0;i<64;i++){const p=b[i];if(!p)continue;const t=p.toLowerCase(),x=i%8,y=i>>3;
+  let v=V[t];if(t!='r'&&t!='q'&&t!='k')v+=(7-Math.abs(7-2*x)-Math.abs(7-2*y))*3;
+  if(t=='p')v+=(p<'a'?6-y:y-1)*6;s+=p<'a'?v:-v}return s}
+function se(b,d,al,be,w){const m=lg(b,w);if(!m.length)return chk(b,w)?(w?-1e5-d:1e5+d):0;if(!d)return ev(b);
+  let best=w?-1e9:1e9;
+  for(const[f,t]of m){const s=se(mk(b,f,t),d-1,al,be,!w);
+    if(w){best=Math.max(best,s);al=Math.max(al,s)}else{best=Math.min(best,s);be=Math.min(be,s)}
+    if(be<=al)break}
+  return best}
+function ai(){const lv=+$('lv').value;let best=1e9,pick=null;
+  for(const[f,t]of LM.slice().sort(()=>Math.random()-.5)){const s=se(mk(B,f,t),lv-1,-1e9,1e9,true)+(lv==1?Math.random()*150:0);if(s<best){best=s;pick=[f,t]}}
+  B=mk(B,pick[0],pick[1]);next(true)}
+function next(w){LM=lg(B,w);const c=chk(B,w);
+  if(!LM.length){over=1;if(c){$('st').textContent=w?'Jaque mate. Has perdido.':'¡Jaque mate! Has ganado.';
+      if(!w)try{parent.postMessage({type:'score',score:Math.max(100,1000-hist*8)},'*')}catch(_){}}
+    else $('st').textContent='Tablas por ahogado.';draw();return}
+  $('st').textContent=(c?'¡Jaque! ':'')+(w?'Tu turno (blancas)':'Pensando…');draw();
+  if(!w)setTimeout(ai,60)}
+function tap(i){if(over||!LM||B.turnAI)return;
+  if(sel>=0&&LM.some(m=>m[0]==sel&&m[1]==i)){B=mk(B,sel,i);sel=-1;hist++;next(false);return}
+  sel=own(B[i],true)?i:-1;draw()}
+function draw(){const bd=$('bd');bd.innerHTML='';const tg=sel>=0?LM.filter(m=>m[0]==sel).map(m=>m[1]):[];
+  for(let i=0;i<64;i++){const c=document.createElement('div'),p=B[i];
+    c.className=((i%8+(i>>3))%2?'d':'l')+(i==sel?' sel':'')+(tg.includes(i)?' mv'+(p?' cap':''):'');
+    if(p){c.textContent=G[p.toLowerCase()];c.classList.add(p<'a'?'w':'k')}
+    c.onclick=()=>tap(i);bd.appendChild(c)}}
+function nw(){B='rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR'.split('').map(c=>c=='.'?'':c);
+  sel=-1;over=0;hist=0;next(true)}
+$('nw').onclick=nw;nw();
+</script></body></html>

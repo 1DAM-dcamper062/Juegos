@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parchís</title><link rel="stylesheet" href="juegos.css">
+<style>canvas{width:min(94vw,66vh,600px);height:auto;background:#1a1e28;border:3px solid #2a3040;border-radius:12px;touch-action:manipulation}
+#die{width:56px;height:56px;display:grid;place-items:center;font:700 28px "Chakra Petch",system-ui,sans-serif;background:#e9ecf2;color:#12151c;border-radius:10px}</style></head>
+<body>
+<h1>Parchís</h1>
+<div class="bar"><div id="die">·</div><button class="pri" id="rl">Tirar dado</button><button id="nw">Nueva partida</button></div>
+<div id="st"></div><canvas id="cv" width="600" height="600"></canvas>
+<script>
+/* Tú eres Rojo (abajo). Sacas ficha con un 5, un 6 repite, comer da 20 y llegar a meta da 10. Hace falta tirada exacta para entrar en meta. */
+const C=[{n:'Rojo',c:'#ff6b6b',st:38},{n:'Verde',c:'#5ad28a',st:55},{n:'Azul',c:'#6ea8ff',st:4},{n:'Amarillo',c:'#ffcf3f',st:21}];
+const SAFE=[4,11,16,21,28,33,38,45,50,55,62,67],$=id=>$$[id]||($$[id]=document.getElementById(id)),$$={};
+const g=$('cv').getContext('2d'),M=30,U=(600-2*M)/17;
+let P,cur,roll,pend,sixes,six,phase,over,ok=[];
+function ring(i){i=(i%68+68)%68;if(i<17)return[i,0];if(i<34)return[17,i-17];if(i<51)return[17-(i-34),17];return[0,17-(i-51)]}
+const px=(x,y)=>[M+x*U,M+y*U];
+function pos(c,s,k){
+  if(s<0){const[x,y]=ring(C[c].st),dx=8.5-x,dy=8.5-y,l=Math.hypot(dx,dy),ux=dx/l,uy=dy/l,a=3+(k>>1)*1.7,b=((k%2)-.5)*1.7;
+    return px(x+ux*a-uy*b,y+uy*a+ux*b)}
+  if(s<=63){const[x,y]=ring(C[c].st+s);return px(x,y)}
+  const[x,y]=ring(C[c].st+63),f=(s-63)/9;return px(x+(8.5-x)*f,y+(8.5-y)*f)}
+const on=a=>{const o=[];for(let c=0;c<4;c++)for(let k=0;k<4;k++){const s=P[c][k];if(s>=0&&s<=63&&(C[c].st+s)%68==a)o.push({c,k})}return o};
+function tgt(c,k,r){const s=P[c][k];let t;
+  if(s<0){if(r!=5)return null;t=0}else{t=s+r;if(t>71)return null}
+  for(let j=s+1;j<=Math.min(t,63);j++)if(on((C[c].st+j)%68).length>=2)return null;
+  return t}
+function mov(c,k,r){const t=tgt(c,k,r);P[c][k]=t;let bonus=0;
+  if(t<=63){const a=(C[c].st+t)%68,en=on(a).filter(x=>x.c!=c);
+    if(en.length==1&&(!SAFE.includes(a)||t==0)){P[en[0].c][en[0].k]=-1;bonus=20}}
+  if(t==71)bonus=10;return bonus}
+function score(k){const s=P[cur][k],t=tgt(cur,k,pend);let v=t==71?90:0;v+=s<0?60:t*.3;if(t>=64)v+=30;
+  if(t<=63){const a=(C[cur].st+t)%68,en=on(a).filter(x=>x.c!=cur);if(en.length==1&&(!SAFE.includes(a)||t==0))v+=100;if(SAFE.includes(a))v+=15}
+  return v+Math.random()*5}
+function say(t){$('st').textContent=t}
+function turn(){phase='roll';ok=[];draw();say(cur?C[cur].n+' tira el dado…':'Tu turno: tira el dado');
+  $('rl').disabled=cur!=0;if(cur)setTimeout(rollDice,800)}
+function nextP(){if(over)return;cur=(cur+1)%4;sixes=0;turn()}
+function endAct(){if(over)return;if(six)turn();else nextP()}
+function rollDice(){if(over||phase!='roll')return;roll=1+Math.random()*6|0;$('die').textContent=roll;six=roll==6;phase='wait';
+  if(six&&++sixes==3){say('Tres seises seguidos: '+C[cur].n+' pierde el turno');six=0;return setTimeout(nextP,1200)}
+  pend=roll;afterRoll()}
+function afterRoll(){ok=[0,1,2,3].filter(k=>tgt(cur,k,pend)!==null);draw();
+  if(!ok.length){say(cur?C[cur].n+' no puede mover':'No puedes mover');return setTimeout(endAct,900)}
+  phase='move';
+  if(cur==0)say(pend>6?'Bonus de '+pend+': elige ficha':'Sacas un '+pend+': elige ficha');
+  else setTimeout(()=>play(ok.slice().sort((a,b)=>score(b)-score(a))[0]),700)}
+function play(k){if(phase!='move')return;phase='wait';const b=mov(cur,k,pend);ok=[];draw();
+  if(P[cur].every(s=>s==71)){over=1;say(cur==0?'¡Has ganado!':'Gana '+C[cur].n);
+    if(cur==0)try{parent.postMessage({type:'score',score:500},'*')}catch(_){}return}
+  if(b){pend=b;setTimeout(afterRoll,600)}else setTimeout(endAct,600)}
+$('cv').addEventListener('click',e=>{if(cur!=0||phase!='move')return;const r=$('cv').getBoundingClientRect(),f=600/r.width,mx=(e.clientX-r.left)*f,my=(e.clientY-r.top)*f;
+  let best=null,bd=26;for(const k of ok){const[x,y]=pos(0,P[0][k],k),d=Math.hypot(x-mx,y-my);if(d<bd){bd=d;best=k}}
+  if(best!==null)play(best)});
+$('rl').onclick=()=>{if(cur==0)rollDice()};
+function dot(x,y,r,f,s,w){g.beginPath();g.arc(x,y,r,0,7);if(f){g.fillStyle=f;g.fill()}if(s){g.strokeStyle=s;g.lineWidth=w||2;g.stroke()}}
+function draw(){g.clearRect(0,0,600,600);
+  for(let i=0;i<68;i++){const[x,y]=px(...ring(i)),ci=C.findIndex(c=>c.st==i);
+    dot(x,y,12,ci>=0?C[ci].c+'55':'#262c3b',SAFE.includes(i)?'#98a0b3':'#303749',ci>=0?3:1.5)}
+  C.forEach((c,ci)=>{for(let s=64;s<=71;s++){const[x,y]=pos(ci,s,0);dot(x,y,s==71?13:9,c.c+(s==71?'88':'33'))}
+    for(let k=0;k<4;k++){const[x,y]=pos(ci,-1,k);dot(x,y,14,'#12151c',c.c+'88',2)}});
+  const seen={};
+  for(let c=0;c<4;c++)for(let k=0;k<4;k++){const s=P[c][k],[x,y]=pos(c,s,k),key=Math.round(x)+','+Math.round(y),n=seen[key]=(seen[key]||0)+1,o=s>=0&&n>1?7:0;
+    dot(x-o*(n>1?1:0)+(n>1?3.5:0),y,12,C[c].c,'#12151c',2.5);
+    if(c==0&&ok.includes(k)&&phase=='move')dot(x-o+(n>1?3.5:0),y,17,0,'#fff',3)}}
+function nw(){P=[0,1,2,3].map(()=>[-1,-1,-1,-1]);cur=0;sixes=0;over=0;$('die').textContent='·';turn()}
+$('nw').onclick=nw;nw();
+</script></body></html>
