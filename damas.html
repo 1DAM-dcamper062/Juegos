@@ -3,53 +3,91 @@
 <title>Damas</title><link rel="stylesheet" href="juegos.css"></head>
 <body>
 <h1>Damas</h1>
-<div class="bar"><select id="lv"><option value="1">Fácil</option><option value="3" selected>Normal</option><option value="5">Difícil</option></select><button class="pri" id="nw">Nueva partida</button></div>
-<div id="st"></div><div class="bd" id="bd"></div>
+<div class="game">
+  <div class="bd" id="bd"></div>
+  <aside class="side">
+    <div class="card" id="st"></div>
+    <div class="card"><div class="cap" id="c1"></div><div class="cap" id="c2"></div></div>
+    <div class="card" style="font-size:14px;color:#98a0b3">Reglas españolas: los peones capturan solo hacia delante, la dama se mueve y captura a cualquier distancia, y debes tomar siempre la jugada que captura más piezas. Para un salto múltiple, toca cada casilla de aterrizaje.</div>
+    <div class="row">
+      <select id="lv"><option value="1">Fácil</option><option value="2" selected>Normal</option><option value="3">Difícil</option></select>
+      <select id="cl"><option value="1">Blancas</option><option value="0">Negras</option></select>
+    </div>
+    <div class="row"><button class="pri" id="nw">Nueva partida</button><button id="un">Deshacer</button><button id="fl">Girar</button></div>
+  </aside>
+</div>
 <script>
-/* Tú juegas con las fichas doradas (abajo). Captura obligatoria; la dama se mueve una casilla. */
-const $=id=>document.getElementById(id),sd=p=>p.toLowerCase();
-const D=p=>p=='r'?[[-1,-1],[1,-1]]:p=='b'?[[-1,1],[1,1]]:[[-1,-1],[1,-1],[-1,1],[1,1]];
-let B,sel,LM,over,hist;
-function pr(b,i){const n=[...b];if(n[i]=='r'&&i<8)n[i]='R';if(n[i]=='b'&&i>55)n[i]='B';return n}
-function jm(b,i,i0,out){let any=0;const p=b[i];
-  for(const[dx,dy]of D(p)){const x=i%8+dx,y=(i>>3)+dy,x2=x+dx,y2=y+dy;if(x2<0||x2>7||y2<0||y2>7)continue;
-    const m=b[y*8+x];
-    if(m&&sd(m)!=sd(p)&&!b[y2*8+x2]){any=1;const n=[...b];n[i]='';n[y*8+x]='';n[y2*8+x2]=p;jm(n,y2*8+x2,i0,out)}}
-  if(!any&&i!=i0)out.push({f:i0,t:i,b:pr(b,i)})}
-function mv(b,s){const j=[],o=[];
-  for(let i=0;i<64;i++){const p=b[i];if(!p||sd(p)!=s)continue;jm(b,i,i,j);
-    for(const[dx,dy]of D(p)){const x=i%8+dx,y=(i>>3)+dy;if(x<0||x>7||y<0||y>7||b[y*8+x])continue;
-      const n=[...b];n[i]='';n[y*8+x]=p;o.push({f:i,t:y*8+x,b:pr(n,y*8+x)})}}
-  return j.length?j:o}
-function ev(b){let s=0;for(let i=0;i<64;i++){const p=b[i];if(!p)continue;const y=i>>3;
-  const v=p=='r'?100+(7-y)*3:p=='b'?-(100+y*3):p=='R'?170:-170;s+=v}return s}
-function se(b,d,al,be,s){const m=mv(b,s);if(!m.length)return s=='r'?-1e5-d:1e5+d;if(!d)return ev(b);
-  let best=s=='r'?-1e9:1e9;
-  for(const x of m){const v=se(x.b,d-1,al,be,s=='r'?'b':'r');
-    if(s=='r'){best=Math.max(best,v);al=Math.max(al,v)}else{best=Math.min(best,v);be=Math.min(be,v)}
-    if(be<=al)break}
+const $=id=>document.getElementById(id);
+const CROWN='<svg viewBox="0 0 24 24"><path d="M3 19 1.500 7l6 5L12 4l4.500 8 6-5L21 19z"/></svg>';
+const D4=[[-1,-1],[1,-1],[-1,1],[1,1]],inb=(x,y)=>x>=0&&x<8&&y>=0&&y<8,own=(p,w)=>p&&(p.toLowerCase()=='w')===w,king=p=>p<'a';
+/* w/b = peón blanco/negro, W/B = dama. Blancas suben (y decrece). */
+function seqs(b0,i,w){const out=[],p=b0[i],K=king(p),b=b0.slice();b[i]='';
+  (function rec(pos,path,cp){let any=0;
+    for(const[dx,dy]of D4){if(!K&&dy!=(w?-1:1))continue;
+      let x=pos%8+dx,y=(pos>>3)+dy;
+      if(K)while(inb(x,y)&&!b[y*8+x]){x+=dx;y+=dy}
+      if(!inb(x,y))continue;const e=y*8+x,q=b[e];
+      if(!q||own(q,w)||cp.includes(e))continue;
+      let lx=x+dx,ly=y+dy;
+      while(inb(lx,ly)&&!b[ly*8+lx]){any=1;rec(ly*8+lx,[...path,ly*8+lx],[...cp,e]);if(!K)break;lx+=dx;ly+=dy}}
+    if(!any&&path.length)out.push({f:i,t:pos,path,cp})})(i,[],[]);
+  return out}
+function moves(b,w){let caps=[],sim=[];
+  for(let i=0;i<64;i++){const p=b[i];if(!own(p,w))continue;caps.push(...seqs(b,i,w));
+    for(const[dx,dy]of D4){if(!king(p)&&dy!=(w?-1:1))continue;let x=i%8+dx,y=(i>>3)+dy;
+      while(inb(x,y)&&!b[y*8+x]){sim.push({f:i,t:y*8+x,path:[y*8+x],cp:[]});if(!king(p))break;x+=dx;y+=dy}}}
+  if(caps.length){const m=Math.max(...caps.map(c=>c.cp.length));return caps.filter(c=>c.cp.length==m)}
+  return sim}
+function apply(b,m){const n=b.slice(),p=n[m.f];n[m.f]='';for(const c of m.cp)n[c]='';
+  n[m.t]=(p=='w'&&m.t<8)?'W':(p=='b'&&m.t>55)?'B':p;return n}
+/* ---------- IA ---------- */
+function ev(b){let v=0;for(let i=0;i<64;i++){const p=b[i];if(!p)continue;const w=p.toLowerCase()=='w',y=i>>3,x=i%8;
+  let e=p<'a'?320:100+(w?7-y:y)*4+(x>1&&x<6?3:0);if(!king(p)&&(w?y==7:y==0))e+=6;
+  if(king(p))e+=(3.5-Math.abs(x-3.5)+3.5-Math.abs(y-3.5))*2;v+=w?e:-e}return v}
+let dl,stop,nodes;
+function se(b,d,al,be,w){if(++nodes%512==0&&Date.now()>dl)stop=1;if(stop)return 0;
+  const ms=moves(b,w);if(!ms.length)return w?-1e5-d:1e5+d;if(!d)return ev(b);
+  let best=w?-1e9:1e9;
+  for(const m of ms){const v=se(apply(b,m),d-1,al,be,!w);if(stop)return 0;
+    if(w){best=Math.max(best,v);al=Math.max(al,v)}else{best=Math.min(best,v);be=Math.min(be,v)}if(be<=al)break}
   return best}
-function ai(){const lv=+$('lv').value;let best=1e9,pick;
-  for(const m of LM.slice().sort(()=>Math.random()-.5)){const v=se(m.b,lv-1,-1e9,1e9,'r')+(lv==1?Math.random()*120:0);if(v<best){best=v;pick=m}}
-  B=pick.b;sel=-1;next('r')}
-function next(s){LM=mv(B,s);
-  if(!LM.length){over=1;const win=s=='b';$('st').textContent=win?'¡Has ganado!':'Has perdido.';
-    if(win)try{parent.postMessage({type:'score',score:Math.max(100,1000-hist*10)},'*')}catch(_){}
-    draw();return}
-  const cap=LM.some(m=>Math.abs((m.f>>3)-(m.t>>3))==2);
-  $('st').textContent=s=='r'?(cap?'Tu turno: captura obligatoria':'Tu turno'):'Pensando…';draw();
-  if(s=='b')setTimeout(ai,350)}
-function tap(i){if(over||!LM)return;
-  const m=sel>=0&&LM.find(x=>x.f==sel&&x.t==i&&sd(B[x.f])=='r');
-  if(m){B=m.b;sel=-1;hist++;next('b');return}
-  sel=B[i]&&sd(B[i])=='r'?i:-1;draw()}
-function draw(){const bd=$('bd');bd.innerHTML='';const tg=sel>=0?LM.filter(m=>m.f==sel).map(m=>m.t):[];
-  for(let i=0;i<64;i++){const c=document.createElement('div'),p=B[i];
-    c.className=((i%8+(i>>3))%2?'d':'l')+(i==sel?' sel':'')+(tg.includes(i)?' mv':'');
-    if(p){const e=document.createElement('i');e.className='pc '+sd(p)+(p<'a'?' K':'');c.appendChild(e)}
-    c.onclick=()=>tap(i);bd.appendChild(c)}}
-function nw(){B=Array(64).fill('');
-  for(let i=0;i<64;i++){if(((i%8)+(i>>3))%2==0)continue;const y=i>>3;if(y<3)B[i]='b';if(y>4)B[i]='r'}
-  sel=-1;over=0;hist=0;next('r')}
-$('nw').onclick=nw;nw();
+function think(b,w,lv){const ms=moves(b,w);if(ms.length==1)return ms[0];
+  if(lv==1){let bs=w?-1e9:1e9,bm=ms[0];for(const m of ms){const v=ev(apply(b,m))+(Math.random()-.5)*160;if(w?v>bs:v<bs){bs=v;bm=m}}return bm}
+  dl=Date.now()+(lv==2?600:1800);stop=0;nodes=0;let bm=ms[0];
+  for(let d=1;d<=(lv==2?6:12);d++){let bs=w?-1e9:1e9,cb=null;
+    for(const m of ms.slice().sort(()=>Math.random()-.5)){const v=se(apply(b,m),d-1,-1e9,1e9,!w);if(stop)break;if(w?v>bs:v<bs){bs=v;cb=m}}
+    if(stop)break;bm=cb;ms.splice(ms.indexOf(cb),1);ms.unshift(cb);if(Math.abs(bs)>9e4)break}
+  return bm}
+/* ---------- Partida ---------- */
+let B,W,hist,human,flip,sel,trail,LM,last,over,fl,hm;
+function after(){LM=moves(B,W);over=0;const hw=W===human;
+  if(!LM.length){over=1;$('st').textContent=hw?'No tienes movimientos. Has perdido.':'¡Has ganado!';
+    if(!hw)try{parent.postMessage({type:'score',score:Math.max(100,Math.round((2000-hist.length*10)*[0,1,1.5,2][+$('lv').value]))},'*')}catch(_){}}
+  else if(hm>=40){over=1;$('st').textContent='Tablas: 20 jugadas de damas sin capturas ni peones.'}
+  else $('st').textContent=hw?(LM[0].cp.length?'Tu turno: captura obligatoria':'Tu turno'):'La máquina está pensando…';
+  render();if(!over&&!hw)setTimeout(()=>{if(W!==human&&!over)play(think(B,W,+$('lv').value))},350)}
+function play(m){const p=B[m.f];hist.push({B,W,l:last,hm});fl=[m.f,m.t];hm=(m.cp.length||!king(p))?0:hm+1;
+  B=apply(B,m);last=[m.f,m.t];W=!W;sel=-1;trail=[];after()}
+function tap(i){if(over||W!==human)return;
+  if(sel>=0){const nt=[...trail,i],c=LM.filter(m=>m.f==sel&&nt.every((q,k)=>m_p(m,k)==q));
+    if(c.length){trail=nt;const done=c.find(m=>m.path.length==nt.length);if(done)return play(done);render();return}}
+  const p=B[i];if(p&&own(p,human)&&LM.some(m=>m.f==i)){sel=i;trail=[]}else{sel=-1;trail=[]}render()}
+const m_p=(m,k)=>m.path[k];
+function render(){const bd=$('bd');bd.innerHTML='';const els={};
+  const nxt=sel>=0?LM.filter(m=>m.f==sel&&trail.every((q,k)=>m.path[k]==q)).map(m=>m.path[trail.length]):[];
+  for(let d=0;d<64;d++){const i=flip?63-d:d,x=i%8,y=i>>3,p=B[i],c=document.createElement('div');
+    c.className='sq '+((x+y)%2?'d':'l')+(i==sel?' sel':'')+(last&&(i==last[0]||i==last[1])?' lm':'')+(trail.includes(i)?' tr':'')+(nxt.includes(i)?' mv':'');
+    if(p)c.innerHTML=`<div class="pc ${p.toLowerCase()}">${king(p)?CROWN:''}</div>`;
+    c.onclick=()=>tap(i);bd.appendChild(c);els[i]=c}
+  if(fl){const a=els[fl[1]].firstChild,dc=n=>flip?7-n%8:n%8,dr=n=>flip?7-(n>>3):n>>3;
+    if(a){a.style.transform=`translate(${(dc(fl[0])-dc(fl[1]))*128}%,${(dr(fl[0])-dr(fl[1]))*128}%)`;a.getBoundingClientRect();a.style.transition='transform .25s ease-out';a.style.transform='none'}fl=null}
+  const n={w:0,b:0};for(const p of B)if(p)n[p.toLowerCase()]++;
+  const pc=(c,k)=>`<div class="pc ${c}" style="width:22px;height:22px;margin-right:-4px"></div>`.repeat(k);
+  $('c1').innerHTML=pc('b',n.b)+`<b>Negras: ${n.b}</b>`;$('c2').innerHTML=pc('w',n.w)+`<b>Blancas: ${n.w}</b>`}
+function undo(){if(W!==human||!hist.length)return;
+  do{const h=hist.pop();B=h.B;W=h.W;last=h.l;hm=h.hm}while(hist.length&&W!==human);sel=-1;trail=[];fl=null;after()}
+function nw(){B=Array(64).fill('');for(let i=0;i<64;i++){if((i%8+(i>>3))%2==0)continue;const y=i>>3;if(y<3)B[i]='b';if(y>4)B[i]='w'}
+  W=true;hist=[];hm=0;human=$('cl').value=='1';flip=!human;sel=-1;trail=[];last=null;fl=null;after()}
+$('nw').onclick=nw;$('un').onclick=undo;$('fl').onclick=()=>{flip=!flip;fl=null;render()};$('cl').onchange=nw;
+nw();
 </script></body></html>

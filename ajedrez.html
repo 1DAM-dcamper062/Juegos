@@ -3,51 +3,140 @@
 <title>Ajedrez</title><link rel="stylesheet" href="juegos.css"></head>
 <body>
 <h1>Ajedrez</h1>
-<div class="bar"><select id="lv"><option value="1">Fácil</option><option value="2" selected>Normal</option><option value="3">Difícil</option></select><button class="pri" id="nw">Nueva partida</button></div>
-<div id="st"></div><div class="bd" id="bd"></div>
+<div class="game">
+  <div class="bd" id="bd"></div>
+  <aside class="side">
+    <div class="card" id="st"></div>
+    <div class="card"><div class="cap" id="c1"></div><div class="cap" id="c2"></div></div>
+    <div class="card"><ol class="mvl" id="ml"></ol></div>
+    <div class="row">
+      <select id="lv"><option value="1">Fácil</option><option value="2" selected>Normal</option><option value="3">Difícil</option></select>
+      <select id="cl"><option value="1">Blancas</option><option value="0">Negras</option></select>
+    </div>
+    <div class="row"><button class="pri" id="nw">Nueva partida</button><button id="un">Deshacer</button><button id="fl">Girar</button></div>
+  </aside>
+</div>
+<div class="ov" id="ov"><div class="card" id="pr"></div></div>
 <script>
-const G={r:'♜',n:'♞',b:'♝',q:'♛',k:'♚',p:'♟'},V={p:100,n:320,b:330,r:500,q:900,k:0};
 const $=id=>document.getElementById(id);
-let B,sel,LM,over,hist;
-const own=(p,w)=>p&&(p<'a')===w;
-function ps(b,i){const x=i%8,y=i>>3,p=b[i],w=p<'a',t=p.toLowerCase(),o=[];
-  const add=(a,c)=>{if(a<0||c<0||a>7||c>7)return 0;const q=b[c*8+a];if(q&&(q<'a')===w)return 0;o.push(c*8+a);return !q};
-  if(t=='p'){const d=w?-1:1;if(!b[(y+d)*8+x]){o.push((y+d)*8+x);if(y==(w?6:1)&&!b[(y+2*d)*8+x])o.push((y+2*d)*8+x)}
-    for(const e of[-1,1]){const a=x+e;if(a>=0&&a<8){const q=b[(y+d)*8+a];if(q&&(q<'a')!==w)o.push((y+d)*8+a)}}}
-  else if(t=='n')for(const[a,c]of[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]])add(x+a,y+c);
-  else{const dr=[];if(t!='b')dr.push([1,0],[-1,0],[0,1],[0,-1]);if(t!='r')dr.push([1,1],[1,-1],[-1,1],[-1,-1]);
-    for(const[a,c]of dr){let k=1;while(add(x+a*k,y+c*k)&&t!='k')k++}}
+const PS={
+ p:'<circle cx="22.5" cy="14" r="5.5"/><path d="M16 35c0-8 3-10 4.5-13h4c1.500 3 4.500 5 4.500 13z"/><rect x="12" y="34.500" width="21" height="4.500" rx="1.800"/>',
+ r:'<path d="M13 20v-8h4v3h3.500v-3h4v3H28v-3h4v8z"/><path d="M15 20l-1.500 14h18L30 20z"/><rect x="11.500" y="34" width="22" height="5" rx="1.800"/>',
+ n:'<path d="M12 39c0-10 3-15 8-19-2 0-4 1.500-6.500 4.500l-3.500-1.500 3-6 4.500-4 1.500-3.500 3.500 3c8.500 0 14 6.500 14 15V39z"/><circle cx="21" cy="14.500" r="1.200" style="fill:#14151b"/>',
+ b:'<path d="M22.500 6c1.700 0 3 1.300 3 3 0 1-.4 1.700-1.100 2.300 4.600 2.700 7.600 7.600 7.600 11.700 0 3.200-1.500 5.300-3.600 6.700H16.500c-2.100-1.400-3.600-3.500-3.600-6.700 0-4.100 3-9 7.600-11.700-.7-.6-1.100-1.300-1.100-2.300 0-1.700 1.300-3 3-3z"/><path class="ln" d="M19 20.500l7 6"/><rect x="12" y="34" width="21" height="5" rx="1.800"/>',
+ q:'<path d="M10.500 36L8 17l7 8V13l5 11 2.500-14 2.500 14 5-11v12l7-8-2.500 19z"/><circle cx="8" cy="16" r="2.200"/><circle cx="15" cy="12" r="2.200"/><circle cx="22.500" cy="9" r="2.200"/><circle cx="30" cy="12" r="2.200"/><circle cx="37" cy="16" r="2.200"/><rect x="10" y="35.500" width="25" height="4" rx="1.800"/>',
+ k:'<path class="ln" d="M22.500 5v9M18.500 9h8" style="stroke-width:2.500"/><path d="M12 36c-2.500-8 .5-14.500 5-16.500 1.500-.8 3-.9 5.500-.9s4 .1 5.500.9c4.500 2 7.500 8.500 5 16.500z"/><rect x="11" y="35.500" width="23" height="4" rx="1.800"/>'};
+const pz=(p,c)=>`<svg viewBox="0 0 45 45" class="pz ${p<'a'?'pw':'pb'} ${c||''}">${PS[p.toLowerCase()]}</svg>`;
+const isW=p=>p<'a',VAL={p:100,n:320,b:330,r:500,q:900,k:0};
+const N=[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]],KD=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+const sqn=i=>'abcdefgh'[i%8]+(8-(i>>3));
+
+/* ---------- Motor ---------- */
+function atk(b,sq,byW){const x=sq%8,y=sq>>3,g=(a,c)=>a>=0&&a<8&&c>=0&&c<8?b[c*8+a]:'-',d=byW?1:-1;
+  if(g(x-1,y+d)==(byW?'P':'p')||g(x+1,y+d)==(byW?'P':'p'))return 1;
+  for(const[a,c]of N)if(g(x+a,y+c)==(byW?'N':'n'))return 1;
+  for(const[a,c]of KD)if(g(x+a,y+c)==(byW?'K':'k'))return 1;
+  const R=byW?'R':'r',Q=byW?'Q':'q',B=byW?'B':'b';
+  for(let i=0;i<8;i++){const[a,c]=KD[i];let k=1,q;while((q=g(x+a*k,y+c*k))==='')k++;if(q===Q||q===(i<4?R:B))return 1}
+  return 0}
+function gen(s,caps){const{b,w}=s,o=[];
+  for(let i=0;i<64;i++){const p=b[i];if(!p||isW(p)!==w)continue;const x=i%8,y=i>>3,t=p.toLowerCase();
+    const mv=(j,e)=>o.push(Object.assign({f:i,t:j,x:b[j],pc:p},e));
+    if(t=='p'){const d=w?-1:1,y1=y+d;
+      const pm=(j,e)=>{if((j>>3)==(w?0:7))for(const r of'qrbn')mv(j,Object.assign({pr:w?r.toUpperCase():r},e));else mv(j,e)};
+      if(!caps&&!b[y1*8+x]){pm(y1*8+x);if(y==(w?6:1)&&!b[(y1+d)*8+x])mv((y1+d)*8+x,{dp:1})}
+      for(const e of[-1,1]){const a=x+e;if(a<0||a>7)continue;const j=y1*8+a,q=b[j];
+        if(q&&isW(q)!==w)pm(j);else if(j==s.ep)mv(j,{ep:1,x:w?'p':'P'})}}
+    else if(t=='n'||t=='k'){
+      for(const[a,c]of t=='n'?N:KD){const X=x+a,Y=y+c;if(X<0||X>7||Y<0||Y>7)continue;const j=Y*8+X,q=b[j];if(q&&isW(q)===w)continue;if(q||!caps)mv(j)}
+      if(t=='k'&&!caps&&i==(w?60:4)&&!atk(b,i,!w)){
+        if(s.c.includes(w?'K':'k')&&!b[i+1]&&!b[i+2]&&b[i+3]==(w?'R':'r')&&!atk(b,i+1,!w)&&!atk(b,i+2,!w))mv(i+2,{ca:1});
+        if(s.c.includes(w?'Q':'q')&&!b[i-1]&&!b[i-2]&&!b[i-3]&&b[i-4]==(w?'R':'r')&&!atk(b,i-1,!w)&&!atk(b,i-2,!w))mv(i-2,{ca:1})}}
+    else for(let n=t=='b'?4:0;n<(t=='r'?4:8);n++){const[a,c]=KD[n];
+      for(let k=1;;k++){const X=x+a*k,Y=y+c*k;if(X<0||X>7||Y<0||Y>7)break;const j=Y*8+X,q=b[j];
+        if(q){if(isW(q)!==w)mv(j);break}if(!caps)mv(j)}}}
   return o}
-function mk(b,f,t){const n=[...b];let p=n[f];if(p=='P'&&t<8)p='Q';if(p=='p'&&t>55)p='q';n[t]=p;n[f]='';return n}
-function chk(b,w){const k=b.indexOf(w?'K':'k');for(let i=0;i<64;i++)if(own(b[i],!w)&&ps(b,i).includes(k))return true;return false}
-function lg(b,w){const m=[];for(let i=0;i<64;i++)if(own(b[i],w))for(const t of ps(b,i))if(!chk(mk(b,i,t),w))m.push([i,t]);return m}
-function ev(b){let s=0;for(let i=0;i<64;i++){const p=b[i];if(!p)continue;const t=p.toLowerCase(),x=i%8,y=i>>3;
-  let v=V[t];if(t!='r'&&t!='q'&&t!='k')v+=(7-Math.abs(7-2*x)-Math.abs(7-2*y))*3;
-  if(t=='p')v+=(p<'a'?6-y:y-1)*6;s+=p<'a'?v:-v}return s}
-function se(b,d,al,be,w){const m=lg(b,w);if(!m.length)return chk(b,w)?(w?-1e5-d:1e5+d):0;if(!d)return ev(b);
-  let best=w?-1e9:1e9;
-  for(const[f,t]of m){const s=se(mk(b,f,t),d-1,al,be,!w);
-    if(w){best=Math.max(best,s);al=Math.max(al,s)}else{best=Math.min(best,s);be=Math.min(be,s)}
-    if(be<=al)break}
-  return best}
-function ai(){const lv=+$('lv').value;let best=1e9,pick=null;
-  for(const[f,t]of LM.slice().sort(()=>Math.random()-.5)){const s=se(mk(B,f,t),lv-1,-1e9,1e9,true)+(lv==1?Math.random()*150:0);if(s<best){best=s;pick=[f,t]}}
-  B=mk(B,pick[0],pick[1]);next(true)}
-function next(w){LM=lg(B,w);const c=chk(B,w);
-  if(!LM.length){over=1;if(c){$('st').textContent=w?'Jaque mate. Has perdido.':'¡Jaque mate! Has ganado.';
-      if(!w)try{parent.postMessage({type:'score',score:Math.max(100,1000-hist*8)},'*')}catch(_){}}
-    else $('st').textContent='Tablas por ahogado.';draw();return}
-  $('st').textContent=(c?'¡Jaque! ':'')+(w?'Tu turno (blancas)':'Pensando…');draw();
-  if(!w)setTimeout(ai,60)}
-function tap(i){if(over||!LM||B.turnAI)return;
-  if(sel>=0&&LM.some(m=>m[0]==sel&&m[1]==i)){B=mk(B,sel,i);sel=-1;hist++;next(false);return}
-  sel=own(B[i],true)?i:-1;draw()}
-function draw(){const bd=$('bd');bd.innerHTML='';const tg=sel>=0?LM.filter(m=>m[0]==sel).map(m=>m[1]):[];
-  for(let i=0;i<64;i++){const c=document.createElement('div'),p=B[i];
-    c.className=((i%8+(i>>3))%2?'d':'l')+(i==sel?' sel':'')+(tg.includes(i)?' mv'+(p?' cap':''):'');
-    if(p){c.textContent=G[p.toLowerCase()];c.classList.add(p<'a'?'w':'k')}
-    c.onclick=()=>tap(i);bd.appendChild(c)}}
-function nw(){B='rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR'.split('').map(c=>c=='.'?'':c);
-  sel=-1;over=0;hist=0;next(true)}
-$('nw').onclick=nw;nw();
+function make(s,m){const b=s.b.slice(),w=s.w;b[m.t]=m.pr||m.pc;b[m.f]='';
+  if(m.ep)b[m.t+(w?8:-8)]='';
+  if(m.ca){const r=m.t>m.f?[m.t+1,m.t-1]:[m.t-2,m.t+1];b[r[1]]=b[r[0]];b[r[0]]=''}
+  let c=s.c;if(c)for(const[q,h]of[[60,'K'],[60,'Q'],[4,'k'],[4,'q'],[63,'K'],[56,'Q'],[7,'k'],[0,'q']])if(m.f==q||m.t==q)c=c.replace(h,'');
+  return{b,w:!w,c,ep:m.dp?(m.f+m.t)/2:-1,hm:(m.pc.toLowerCase()=='p'||m.x)?0:s.hm+1}}
+const ksq=(b,w)=>b.indexOf(w?'K':'k'),inChk=s=>atk(s.b,ksq(s.b,s.w),!s.w);
+const legal=s=>gen(s).filter(m=>{const n=make(s,m);return !atk(n.b,ksq(n.b,s.w),!s.w)});
+function ev(s){let v=0;
+  for(let i=0;i<64;i++){const p=s.b[i];if(!p)continue;const t=p.toLowerCase(),w=isW(p),x=i%8,r=i>>3,yr=w?7-r:r,cx=3.5-Math.abs(x-3.5),cy=3.5-Math.abs(r-3.5);
+    let e=VAL[t];
+    if(t=='p')e+=(yr-1)*7+(x==3||x==4?6:0)+(yr>=5?(yr-4)*10:0);
+    else if(t=='n'||t=='b')e+=(cx+cy)*5-(yr==0?8:0);
+    else if(t=='r')e+=yr==6?15:0;
+    else if(t=='q')e+=(cx+cy)*1.5;
+    else e+=yr==0?(x==1||x==2||x==6?20:8):-yr*6;
+    v+=w?e:-e}
+  return s.w?v:-v}
+const sc=m=>(m.x?VAL[m.x.toLowerCase()]*10-VAL[m.pc.toLowerCase()]/10:0)+(m.pr?800:0),ord=(a,b)=>sc(b)-sc(a);
+let nodes,dl,stop;
+function qs(s,al,be,d){const st=ev(s);if(st>=be)return st;if(st>al)al=st;if(d<=0)return st;
+  for(const m of gen(s,1).sort(ord)){const n=make(s,m);if(atk(n.b,ksq(n.b,s.w),!s.w))continue;const v=-qs(n,-be,-al,d-1);if(v>=be)return v;if(v>al)al=v}
+  return al}
+function ng(s,d,al,be,ply){if(++nodes%1024==0&&Date.now()>dl)stop=1;if(stop)return 0;if(d<=0)return qs(s,al,be,4);
+  let any=0,best=-1e9;
+  for(const m of gen(s).sort(ord)){const n=make(s,m);if(atk(n.b,ksq(n.b,s.w),!s.w))continue;any=1;
+    const v=-ng(n,d-1,-be,-al,ply+1);if(stop)return 0;if(v>best){best=v;if(v>al)al=v}if(al>=be)break}
+  return any?best:inChk(s)?-1e5+ply:0}
+function think(s,lv){const ms=legal(s);let bm=ms[Math.random()*ms.length|0];
+  if(lv==1){let bs=-1e9;for(const m of ms){const v=-qs(make(s,m),-1e9,1e9,0)+Math.random()*140;if(v>bs){bs=v;bm=m}}return bm}
+  dl=Date.now()+(lv==2?900:2400);stop=0;nodes=0;ms.sort(ord);
+  for(let d=1;d<=(lv==2?3:6);d++){let bs=-1e9,cb=null;
+    for(const m of ms){const v=-ng(make(s,m),d-1,-1e9,1e9,1)+Math.random()*3;if(stop)break;if(v>bs){bs=v;cb=m}}
+    if(stop)break;bm=cb;ms.splice(ms.indexOf(cb),1);ms.unshift(cb);if(bs>9e4)break}
+  return bm}
+
+/* ---------- Partida ---------- */
+let S,hist,keys,human,flip,sel,LM,last,over,fl;
+const key=s=>s.b.join('.')+s.w+s.c+s.ep;
+const insuf=b=>{const r=b.filter(p=>p&&p.toLowerCase()!='k');return !r.length||(r.length==1&&'nb'.includes(r[0].toLowerCase()))};
+function san(s,m){const p=m.pc.toUpperCase(),n=make(s,m),cap=m.x||m.ep;let r;
+  if(m.ca)r=m.t>m.f?'O-O':'O-O-O';
+  else if(p=='P')r=(cap?'abcdefgh'[m.f%8]+'x':'')+sqn(m.t)+(m.pr?'='+m.pr.toUpperCase():'');
+  else{let d='';const o=legal(s).filter(q=>q.t==m.t&&q.pc==m.pc&&q.f!=m.f);
+    if(o.length)d=o.every(q=>q.f%8!=m.f%8)?'abcdefgh'[m.f%8]:o.every(q=>(q.f>>3)!=(m.f>>3))?8-(m.f>>3):sqn(m.f);
+    r=p+d+(cap?'x':'')+sqn(m.t)}
+  return r+(inChk(n)?(legal(n).length?'+':'#'):'')}
+function play(m){hist.push({s:S,t:san(S,m),l:last});fl=[m.f,m.t];S=make(S,m);last=[m.f,m.t];sel=-1;
+  const k=key(S);keys[k]=(keys[k]||0)+1;after()}
+function after(){LM=legal(S);over=0;const c=inChk(S);let msg;
+  if(!LM.length){over=1;msg=c?(S.w===human?'Jaque mate. Has perdido.':'¡Jaque mate! Has ganado.'):'Tablas por rey ahogado.'}
+  else if(S.hm>=100){over=1;msg='Tablas: 50 movimientos sin captura ni peón.'}
+  else if(keys[key(S)]>=3){over=1;msg='Tablas por triple repetición.'}
+  else if(insuf(S.b)){over=1;msg='Tablas por material insuficiente.'}
+  if(over&&c&&S.w!==human){const lv=+$('lv').value;try{parent.postMessage({type:'score',score:Math.max(100,Math.round((3000-hist.length*15)*[0,1,1.5,2][lv]))},'*')}catch(_){}}
+  $('st').textContent=over?msg:(c?'¡Jaque! ':'')+(S.w===human?'Tu turno':'La máquina está pensando…');
+  render();
+  if(!over&&S.w!==human)setTimeout(()=>{if(S.w!==human&&!over)play(think(S,+$('lv').value))},120)}
+function tap(i){if(over||S.w!==human)return;
+  const ms=LM.filter(m=>m.f==sel&&m.t==i);
+  if(ms.length==1)return play(ms[0]);
+  if(ms.length>1){const pr=$('pr');pr.innerHTML='';for(const m of ms){const b=document.createElement('button');b.innerHTML=pz(m.pr);b.onclick=()=>{$('ov').classList.remove('on');play(m)};pr.appendChild(b)}$('ov').classList.add('on');return}
+  sel=S.b[i]&&isW(S.b[i])===human?i:-1;render()}
+function render(){const bd=$('bd');bd.innerHTML='';const tm=LM.filter(m=>m.f==sel),ck=inChk(S)?ksq(S.b,S.w):-1,els={};
+  for(let d=0;d<64;d++){const i=flip?63-d:d,x=i%8,y=i>>3,p=S.b[i],c=document.createElement('div'),mm=tm.find(m=>m.t==i);
+    c.className='sq '+((x+y)%2?'d':'l')+(i==sel?' sel':'')+(last&&(i==last[0]||i==last[1])?' lm':'')+(i==ck?' chk':'')+(mm?' mv'+(mm.x?' cap':''):'');
+    c.innerHTML=(d>55?`<span class="co f">${'abcdefgh'[x]}</span>`:'')+(d%8==0?`<span class="co r">${8-y}</span>`:'')+(p?pz(p):'');
+    c.onclick=()=>tap(i);bd.appendChild(c);els[i]=c}
+  if(fl){const a=els[fl[1]].querySelector('svg'),dc=n=>flip?7-n%8:n%8,dr=n=>flip?7-(n>>3):n>>3;
+    if(a){a.style.transform=`translate(${(dc(fl[0])-dc(fl[1]))*100}%,${(dr(fl[0])-dr(fl[1]))*100}%)`;a.getBoundingClientRect();a.style.transition='transform .22s ease-out';a.style.transform='none'}fl=null}
+  // capturas y notación
+  const cnt={},start={p:8,n:2,b:2,r:2,q:1};for(const p of S.b)if(p&&p.toLowerCase()!='k')cnt[p]=(cnt[p]||0)+1;
+  let mat=0,row=[[],[]];
+  for(const t in start)for(const w of[1,0]){const ch=w?t.toUpperCase():t,m=start[t]-(cnt[ch]||0);for(let k=0;k<m;k++)row[w?1:0].push(pz(w?t.toUpperCase():t));mat+=(w?-1:1)*m*VAL[t]}
+  // row[1]: blancas perdidas (capturadas por negras), row[0]: negras perdidas
+  const whiteUp=mat>0;$('c1').innerHTML=row[0].join('')+(whiteUp?`<b>+${mat/100}</b>`:'');$('c2').innerHTML=row[1].join('')+(!whiteUp&&mat<0?`<b>+${-mat/100}</b>`:'');
+  $('ml').innerHTML=hist.map((h,n)=>n%2?`<span>${h.t}</span>`:`<i>${n/2+1}.</i><span>${h.t}</span>`).join('');$('ml').scrollTop=1e5}
+function undo(){if(S.w!==human||!hist.length)return;
+  do{const h=hist.pop();S=h.s;last=h.l}while(hist.length&&S.w!==human);
+  keys={};for(const h of hist)keys[key(h.s)]=(keys[key(h.s)]||0)+1;keys[key(S)]=(keys[key(S)]||0)+1;sel=-1;fl=null;after()}
+function nw(){S={b:('rnbqkbnrpppppppp'+'.'.repeat(32)+'PPPPPPPPRNBQKBNR').split('').map(c=>c=='.'?'':c),w:true,c:'KQkq',ep:-1,hm:0};
+  hist=[];keys={};keys[key(S)]=1;human=$('cl').value=='1';flip=!human;sel=-1;last=null;fl=null;after()}
+$('nw').onclick=nw;$('un').onclick=undo;$('fl').onclick=()=>{flip=!flip;fl=null;render()};$('cl').onchange=nw;
+nw();
 </script></body></html>
