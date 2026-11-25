@@ -16,6 +16,7 @@
     <div class="row"><button class="pri" id="nw">Nueva partida</button><button id="un">Deshacer</button><button id="fl">Girar</button></div>
   </aside>
 </div>
+<script src="multiplayer.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const CROWN='<svg viewBox="0 0 24 24"><path d="M3 19 1.500 7l6 5L12 4l4.500 8 6-5L21 19z"/></svg>';
@@ -59,16 +60,16 @@ function think(b,w,lv){const ms=moves(b,w);if(ms.length==1)return ms[0];
     if(stop)break;bm=cb;ms.splice(ms.indexOf(cb),1);ms.unshift(cb);if(Math.abs(bs)>9e4)break}
   return bm}
 /* ---------- Partida ---------- */
-let B,W,hist,human,flip,sel,trail,LM,last,over,fl,hm;
+let B,W,hist,human,flip,sel,trail,LM,last,over,fl,hm,MP;
 function after(){LM=moves(B,W);over=0;const hw=W===human;
   if(!LM.length){over=1;$('st').textContent=hw?'No tienes movimientos. Has perdido.':'¡Has ganado!';
     if(!hw)try{parent.postMessage({type:'score',score:Math.max(100,Math.round((2000-hist.length*10)*[0,1,1.5,2][+$('lv').value]))},'*')}catch(_){}}
   else if(hm>=40){over=1;$('st').textContent='Tablas: 20 jugadas de damas sin capturas ni peones.'}
-  else $('st').textContent=hw?(LM[0].cp.length?'Tu turno: captura obligatoria':'Tu turno'):'La máquina está pensando…';
-  render();if(!over&&!hw)setTimeout(()=>{if(W!==human&&!over)play(think(B,W,+$('lv').value))},350)}
-function play(m){const p=B[m.f];hist.push({B,W,l:last,hm});fl=[m.f,m.t];hm=(m.cp.length||!king(p))?0:hm+1;
-  B=apply(B,m);last=[m.f,m.t];W=!W;sel=-1;trail=[];after()}
-function tap(i){if(over||W!==human)return;
+  else $('st').textContent=hw?(LM[0].cp.length?'Tu turno: captura obligatoria':'Tu turno'):(MP?.active?'Turno del rival':'La máquina está pensando…');
+  render();if(!over&&!MP?.active&&!hw)setTimeout(()=>{if(W!==human&&!over)play(think(B,W,+$('lv').value))},350)}
+function play(m){if(MP?.active&&!MP.isMyTurn())return;const p=B[m.f];hist.push({B,W,l:last,hm});fl=[m.f,m.t];hm=(m.cp.length||!king(p))?0:hm+1;
+  B=apply(B,m);last=[m.f,m.t];W=!W;sel=-1;trail=[];after();if(MP?.active)MP.publish()}
+function tap(i){if(over||(MP?.active?!MP.isMyTurn():W!==human))return;
   if(sel>=0){const nt=[...trail,i],c=LM.filter(m=>m.f==sel&&nt.every((q,k)=>m_p(m,k)==q));
     if(c.length){trail=nt;const done=c.find(m=>m.path.length==nt.length);if(done)return play(done);render();return}}
   const p=B[i];if(p&&own(p,human)&&LM.some(m=>m.f==i)){sel=i;trail=[]}else{sel=-1;trail=[]}render()}
@@ -90,4 +91,12 @@ function nw(){B=Array(64).fill('');for(let i=0;i<64;i++){if((i%8+(i>>3))%2==0)co
   W=true;hist=[];hm=0;human=$('cl').value=='1';flip=!human;sel=-1;trail=[];last=null;fl=null;after()}
 $('nw').onclick=nw;$('un').onclick=undo;$('fl').onclick=()=>{flip=!flip;fl=null;render()};$('cl').onchange=nw;
 nw();
+MP=installMultiplayer({
+  game:"damas",capacity:()=>2,
+  getState:()=>({B,W,hist,last,hm}),
+  setState:d=>{B=d.B;W=d.W;hist=d.hist||[];last=d.last||null;hm=d.hm||0;human=MP.seat===0;flip=MP.seat===1;sel=-1;trail=[];after()},
+  getTurn:()=>W?0:1,isOver:()=>over,
+  onMode:seat=>{human=seat===0;flip=seat===1;sel=-1;trail=[];$('nw').disabled=true;$('cl').disabled=true;$('un').disabled=true;after()},
+  onLeave:()=>{$('nw').disabled=false;$('cl').disabled=false;$('un').disabled=false;nw()}
+});
 </script></body></html>

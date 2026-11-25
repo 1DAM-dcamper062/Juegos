@@ -138,6 +138,7 @@ footer{text-align:center;padding:20px;color:var(--mut);font-size:13px;border-top
 </div>
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ===== Configuración =====
    Rellena estos dos valores con los de tu proyecto de Supabase para que las
@@ -150,9 +151,9 @@ const GAMES = [
   { id:"Robot",   file:"Robot.html",   name:"Robot",   tag:"Aventura", desc:"Controla a tu robot y supera cada reto." },
   { id:"krunker", file:"krunker.html", name:"Krunker", tag:"Shooter 3D", desc:"Disparos rápidos en primera persona." },
   { id:"moto3d",  file:"moto3d.html",  name:"Moto 3D", tag:"Carreras", desc:"Acelera, esquiva y mejora tu moto." },
-  { id:"ajedrez", file:"ajedrez.html", name:"Ajedrez", tag:"Mesa", desc:"Juega con blancas contra la máquina, en tres niveles." },
-  { id:"damas",   file:"damas.html",   name:"Damas",   tag:"Mesa", desc:"Captura obligatoria y coronación de damas." },
-  { id:"parchis", file:"parchis.html", name:"Parchís", tag:"Mesa", desc:"Tú contra tres rivales. Saca un 5 y llega a meta." }
+  { id:"ajedrez", file:"ajedrez.html", name:"Ajedrez", tag:"Mesa · Online", desc:"Juega contra la máquina o reta online a otro usuario." },
+  { id:"damas",   file:"damas.html",   name:"Damas",   tag:"Mesa · Online", desc:"Damas españolas: juega contra la máquina o contra otro usuario." },
+  { id:"parchis", file:"parchis.html", name:"Parchís", tag:"Mesa · Online", desc:"Parchís español: juega contra la máquina o crea una sala online." }
 ];
 
 /* ===== Miniaturas (SVG propio; si existe miniaturas/<id>.jpg se usa esa imagen) ===== */
@@ -187,7 +188,7 @@ const API = {
     if (remote) {
       const j = await sb("/auth/v1/signup", { method: "POST", body: JSON.stringify({ email: mail(u), password: p, data: { username: u } }) });
       if (!j.access_token) throw new Error("Desactiva «Confirm email» en Supabase para registrar usuarios.");
-      return { uid: j.user.id, name: u, token: j.access_token };
+      return { uid: j.user.id, name: u, token: j.access_token, refresh: j.refresh_token };
     }
     const us = LS("g_users") || {};
     if (us[u.toLowerCase()]) throw new Error("Ese usuario ya existe.");
@@ -197,7 +198,7 @@ const API = {
   async login(u, p) {
     if (remote) {
       const j = await sb("/auth/v1/token?grant_type=password", { method: "POST", body: JSON.stringify({ email: mail(u), password: p }) });
-      return { uid: j.user.id, name: j.user.user_metadata?.username || u, token: j.access_token };
+      return { uid: j.user.id, name: j.user.user_metadata?.username || u, token: j.access_token, refresh: j.refresh_token };
     }
     const us = LS("g_users") || {};
     if (us[u.toLowerCase()] !== await hash(p)) throw new Error("Usuario o contraseña incorrectos.");
@@ -216,6 +217,50 @@ const API = {
   async addBug(game, text) {
     if (remote) return sb("/rest/v1/bugs", { method: "POST", body: JSON.stringify({ game, text, username: SES?.name || null }) });
     const a = LS("g_bugs") || []; a.push({ game, text, username: SES?.name || null, at: new Date().toISOString() }); LS("g_bugs", a);
+  }
+};
+
+/* ===== Cliente online compartido con los juegos embebidos ===== */
+let mpClient = null;
+async function getMpClient() {
+  if (!remote || !SES?.uid || !SES?.token || !window.supabase?.createClient)
+    throw new Error("Inicia sesión con una cuenta registrada para jugar online.");
+  if (!mpClient) {
+    mpClient = window.supabase.createClient(CFG.URL, CFG.KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    });
+    if (SES.refresh) {
+      const { error } = await mpClient.auth.setSession({ access_token: SES.token, refresh_token: SES.refresh });
+      if (error) throw error;
+    } else await mpClient.realtime.setAuth(SES.token);
+  }
+  return mpClient;
+}
+window.GamesOnline = {
+  identity: () => SES ? { id: SES.uid, name: SES.name } : null,
+  async create(game, capacity, state) {
+    const c = await getMpClient(), { data, error } = await c.rpc("mp_create_game", { p_game: game, p_capacity: capacity, p_state: state });
+    if (error) throw error; return data;
+  },
+  async join(code) {
+    const c = await getMpClient(), { data, error } = await c.rpc("mp_join_game", { p_code: code.trim().toUpperCase() });
+    if (error) throw error; return data;
+  },
+  async move(id, expected, state, turnSeat, status) {
+    const c = await getMpClient(), { data, error } = await c.rpc("mp_submit_move", {
+      p_game_id:id, p_expected_version:expected, p_state:state, p_turn_seat:turnSeat, p_status:status||"playing"
+    });
+    if (error) throw error; return data;
+  },
+  async get(id) {
+    const c = await getMpClient(), { data, error } = await c.from("multiplayer_games").select("*").eq("id",id).single();
+    if (error) throw error; return data;
+  },
+  async watch(id, callback) {
+    const c = await getMpClient();
+    const channel = c.channel("game-"+id).on("postgres_changes",
+      {event:"UPDATE",schema:"public",table:"multiplayer_games",filter:"id=eq."+id}, e=>callback(e.new)).subscribe();
+    return ()=>c.removeChannel(channel);
   }
 };
 
@@ -297,7 +342,7 @@ function setMode(m) {
   $("dMsg").textContent = "";
 }
 function setSession(s) {
-  SES = s; s ? LS("g_session", s) : localStorage.removeItem("g_session");
+  mpClient = null; SES = s; s ? LS("g_session", s) : localStorage.removeItem("g_session");
   $("accBtn").textContent = s ? s.name + " · Salir" : "Entrar";
 }
 $("accBtn").onclick = async () => {

@@ -17,6 +17,7 @@
   </aside>
 </div>
 <div class="ov" id="ov"><div class="card" id="pr"></div></div>
+<script src="multiplayer.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PS={
@@ -92,7 +93,7 @@ function think(s,lv){const ms=legal(s);let bm=ms[Math.random()*ms.length|0];
   return bm}
 
 /* ---------- Partida ---------- */
-let S,hist,keys,human,flip,sel,LM,last,over,fl;
+let S,hist,keys,human,flip,sel,LM,last,over,fl,MP;
 const key=s=>s.b.join('.')+s.w+s.c+s.ep;
 const insuf=b=>{const r=b.filter(p=>p&&p.toLowerCase()!='k');return !r.length||(r.length==1&&'nb'.includes(r[0].toLowerCase()))};
 function san(s,m){const p=m.pc.toUpperCase(),n=make(s,m),cap=m.x||m.ep;let r;
@@ -102,18 +103,18 @@ function san(s,m){const p=m.pc.toUpperCase(),n=make(s,m),cap=m.x||m.ep;let r;
     if(o.length)d=o.every(q=>q.f%8!=m.f%8)?'abcdefgh'[m.f%8]:o.every(q=>(q.f>>3)!=(m.f>>3))?8-(m.f>>3):sqn(m.f);
     r=p+d+(cap?'x':'')+sqn(m.t)}
   return r+(inChk(n)?(legal(n).length?'+':'#'):'')}
-function play(m){hist.push({s:S,t:san(S,m),l:last});fl=[m.f,m.t];S=make(S,m);last=[m.f,m.t];sel=-1;
-  const k=key(S);keys[k]=(keys[k]||0)+1;after()}
+function play(m){if(MP?.active&&!MP.isMyTurn())return;hist.push({s:S,t:san(S,m),l:last});fl=[m.f,m.t];S=make(S,m);last=[m.f,m.t];sel=-1;
+  const k=key(S);keys[k]=(keys[k]||0)+1;after();if(MP?.active)MP.publish()}
 function after(){LM=legal(S);over=0;const c=inChk(S);let msg;
   if(!LM.length){over=1;msg=c?(S.w===human?'Jaque mate. Has perdido.':'¡Jaque mate! Has ganado.'):'Tablas por rey ahogado.'}
   else if(S.hm>=100){over=1;msg='Tablas: 50 movimientos sin captura ni peón.'}
   else if(keys[key(S)]>=3){over=1;msg='Tablas por triple repetición.'}
   else if(insuf(S.b)){over=1;msg='Tablas por material insuficiente.'}
   if(over&&c&&S.w!==human){const lv=+$('lv').value;try{parent.postMessage({type:'score',score:Math.max(100,Math.round((3000-hist.length*15)*[0,1,1.5,2][lv]))},'*')}catch(_){}}
-  $('st').textContent=over?msg:(c?'¡Jaque! ':'')+(S.w===human?'Tu turno':'La máquina está pensando…');
+  $('st').textContent=over?msg:(c?'¡Jaque! ':'')+(S.w===human?'Tu turno':(MP?.active?'Turno del rival':'La máquina está pensando…'));
   render();
-  if(!over&&S.w!==human)setTimeout(()=>{if(S.w!==human&&!over)play(think(S,+$('lv').value))},120)}
-function tap(i){if(over||S.w!==human)return;
+  if(!over&&!MP?.active&&S.w!==human)setTimeout(()=>{if(S.w!==human&&!over)play(think(S,+$('lv').value))},120)}
+function tap(i){if(over||(MP?.active?!MP.isMyTurn():S.w!==human))return;
   const ms=LM.filter(m=>m.f==sel&&m.t==i);
   if(ms.length==1)return play(ms[0]);
   if(ms.length>1){const pr=$('pr');pr.innerHTML='';for(const m of ms){const b=document.createElement('button');b.innerHTML=pz(m.pr);b.onclick=()=>{$('ov').classList.remove('on');play(m)};pr.appendChild(b)}$('ov').classList.add('on');return}
@@ -139,4 +140,12 @@ function nw(){S={b:('rnbqkbnrpppppppp'+'.'.repeat(32)+'PPPPPPPPRNBQKBNR').split(
   hist=[];keys={};keys[key(S)]=1;human=$('cl').value=='1';flip=!human;sel=-1;last=null;fl=null;after()}
 $('nw').onclick=nw;$('un').onclick=undo;$('fl').onclick=()=>{flip=!flip;fl=null;render()};$('cl').onchange=nw;
 nw();
+MP=installMultiplayer({
+  game:"ajedrez",capacity:()=>2,
+  getState:()=>({S,hist,keys,last}),
+  setState:d=>{S=d.S;hist=d.hist||[];keys=d.keys||{};last=d.last||null;human=MP.seat===0;flip=MP.seat===1;sel=-1;fl=null;after()},
+  getTurn:()=>S.w?0:1,isOver:()=>over,
+  onMode:seat=>{human=seat===0;flip=seat===1;sel=-1;$('nw').disabled=true;$('cl').disabled=true;$('un').disabled=true;after()},
+  onLeave:()=>{$('nw').disabled=false;$('cl').disabled=false;$('un').disabled=false;nw()}
+});
 </script></body></html>

@@ -24,13 +24,14 @@ canvas{width:min(96vw,78vh,760px);height:auto;border-radius:14px;background:#171
     <button class="pri" id="nw">Nueva partida</button>
   </aside>
 </div>
+<script src="multiplayer.js"></script>
 <script>
 const $=id=>document.getElementById(id),cv=$('cv'),g=cv.getContext('2d'),CS=40,W=760;
 const COL=[{n:'Rojo',c:'#ff6b6b'},{n:'Verde',c:'#5ad28a'},{n:'Azul',c:'#6ea8ff'},{n:'Amarillo',c:'#ffcf3f'}];
 /* Rojo abajo (tú), Verde izquierda, Azul arriba, Amarillo derecha. Circuito de 68 casillas en sentido horario. */
 const ST=[47,64,13,30],EN=[42,59,8,25],DR=[[0,-1],[1,0],[0,1],[-1,0]],BC=[[3.5,14.5],[3.5,3.5],[14.5,3.5],[14.5,14.5]];
 const SAFE=[3,8,13,20,25,30,37,42,47,54,59,64];
-let P,cur,ph,pend,six,sixes,ok,lastP,over,ACT;
+let P,cur,ph,pend,six,sixes,ok,lastP,over,ACT,MP;
 function ring(i){i=(i%68+68)%68;
   if(i<8)return[8,7-i];if(i==8)return[9,0];if(i<17)return[10,i-9];
   if(i<25)return[11+i-17,8];if(i==25)return[18,9];if(i<34)return[18-(i-26),10];
@@ -64,26 +65,27 @@ const msg=t=>$('st').textContent=t;
 const PIP={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 const face=v=>$('die').innerHTML=Array.from({length:9},(_,i)=>`<span class="${PIP[v].includes(i)?'on':''}"></span>`).join('');
 function players(){$('pl').innerHTML=ACT.map(c=>`<div class="pl ${c==cur&&!over?'on':''}"><i style="background:${COL[c].c}"></i><b>${c==0?'Tú':COL[c].n}</b><span>${P[c].filter(s=>s==71).length}/4 en meta</span></div>`).join('')}
-function turn(){ph='roll';ok=[];players();$('rl').disabled=cur!=0;
+function turn(){ph='roll';ok=[];players();$('rl').disabled=MP?.active?!MP.isMyTurn():cur!=0;
+  if(MP?.active){msg(MP.isMyTurn()?'Tu turno: tira el dado':'Esperando a '+COL[cur].n);return}
   if(cur==0)msg('Tu turno: tira el dado');else{msg('Turno de '+COL[cur].n);setTimeout(roll,900)}}
 function nextP(){if(over)return;cur=ACT[(ACT.indexOf(cur)+1)%ACT.length];sixes=0;six=0;turn()}
-function endAct(){if(over)return;if(six){msg(cur==0?'Sacaste un 6: vuelves a tirar':COL[cur].n+' repite turno');setTimeout(turn,700)}else nextP()}
-function roll(){if(over||ph!='roll')return;ph='rolling';$('rl').disabled=true;let n=0;
+function endAct(){if(over)return;if(six){msg(cur==0?'Sacaste un 6: vuelves a tirar':COL[cur].n+' repite turno');setTimeout(()=>{turn();if(MP?.active)MP.publish()},700)}else{nextP();if(MP?.active)MP.publish()}}
+function roll(){if(over||ph!='roll'||(MP?.active&&!MP.isMyTurn()))return;ph='rolling';$('rl').disabled=true;let n=0;
   const iv=setInterval(()=>{face(1+Math.random()*6|0);if(++n>8){clearInterval(iv);got(1+Math.random()*6|0)}},70)}
 function got(v){face(v);six=v==6;
   if(six&&++sixes==3){const lp=lastP[cur];six=0;
     if(lp!=null&&P[cur][lp]>=0&&P[cur][lp]<64){P[cur][lp]=-1;msg('Tres seises seguidos: '+(cur==0?'tu última ficha vuelve':'una ficha de '+COL[cur].n+' vuelve')+' a casa')}
     else msg('Tres seises seguidos: pierdes el turno');
-    return setTimeout(nextP,1500)}
+    return setTimeout(()=>{nextP();if(MP?.active)MP.publish()},1500)}
   pend=six&&P[cur].every(s=>s>=0)?7:v;if(pend==7)msg('Con todas las fichas fuera, el 6 vale 7');
   setTimeout(afterRoll,pend==7?900:300)}
 function afterRoll(){if(over)return;ok=legal(cur,pend);
   if(!ok.length){msg((cur==0?'No puedes':COL[cur].n+' no puede')+' mover con '+pend);return setTimeout(endAct,1000)}
   ph='move';
   if(ok.length==1)return setTimeout(()=>play(cur,ok[0]),cur==0?500:700);
-  if(cur==0)msg('Elige la ficha que quieres mover ('+pend+')');
-  else setTimeout(()=>play(cur,$('lv').value==1?ok[Math.random()*ok.length|0]:ok.slice().sort((a,b)=>val(cur,b)-val(cur,a))[0]),850)}
-function play(c,k){if(ph!='move')return;ph='anim';ok=[];const s0=P[c][k],t=tgt(c,k,pend),st=[];
+  if(cur==0||(MP?.active&&MP.isMyTurn()))msg('Elige la ficha que quieres mover ('+pend+')');
+  else if(!MP?.active)setTimeout(()=>play(cur,$('lv').value==1?ok[Math.random()*ok.length|0]:ok.slice().sort((a,b)=>val(cur,b)-val(cur,a))[0]),850)}
+function play(c,k){if(ph!='move'||(MP?.active&&!MP.isMyTurn()))return;ph='anim';ok=[];const s0=P[c][k],t=tgt(c,k,pend),st=[];
   if(s0<0)st.push(0);else for(let j=s0+1;j<=t;j++)st.push(j);
   lastP[c]=k;let i=0;
   const iv=setInterval(()=>{P[c][k]=st[i++];if(i>=st.length){clearInterval(iv);fin(c,k)}},st.length>1?80:250)}
@@ -93,7 +95,8 @@ function fin(c,k){const t=P[c][k];let b=0;
   else if(t==71){b=10;msg(COL[c].n+' mete una ficha en meta: avanza 10')}
   players();
   if(P[c].every(s=>s==71)){over=1;ph='end';players();msg(c==0?'¡Has ganado la partida!':'Gana '+COL[c].n+'.');
-    if(c==0)try{parent.postMessage({type:'score',score:ACT.length==4?1000:600},'*')}catch(_){}return}
+    if(c==0)try{parent.postMessage({type:'score',score:ACT.length==4?1000:600},'*')}catch(_){}
+    if(MP?.active)MP.publish();return}
   if(b){pend=b;setTimeout(afterRoll,800)}else setTimeout(endAct,450)}
 /* ---------- Dibujo ---------- */
 function rr(x,y,w,h,r,f,s,lw){g.beginPath();g.roundRect(x,y,w,h,r);if(f){g.fillStyle=f;g.fill()}if(s){g.strokeStyle=s;g.lineWidth=lw||2;g.stroke()}}
@@ -117,13 +120,21 @@ function draw(t){g.clearRect(0,0,W,W);
     if(c==0&&ph=='move'&&ok.includes(k)){const p=.5+.5*Math.sin(t/160);dot(a,b,19+p*4,0,'rgba(255,255,255,'+(.55+p*.45)+')',3.5)}
     piece(a,b,COL[c].c)}}
 const loop=t=>{draw(t);requestAnimationFrame(loop)};
-cv.addEventListener('click',e=>{if(cur!=0||ph!='move'||over)return;const r=cv.getBoundingClientRect(),f=W/r.width,mx=(e.clientX-r.left)*f,my=(e.clientY-r.top)*f;
-  let best=null,bd=CS*.95;for(const k of ok){const[a,b]=px(...pos(0,P[0][k],k)),d=Math.hypot(a-mx,b-my);if(d<bd){bd=d;best=k}}
-  if(best!==null)play(0,best)});
+cv.addEventListener('click',e=>{if((MP?.active?!MP.isMyTurn():cur!=0)||ph!='move'||over)return;const r=cv.getBoundingClientRect(),f=W/r.width,mx=(e.clientX-r.left)*f,my=(e.clientY-r.top)*f;
+  let best=null,bd=CS*.95;for(const k of ok){const[a,b]=px(...pos(cur,P[cur][k],k)),d=Math.hypot(a-mx,b-my);if(d<bd){bd=d;best=k}}
+  if(best!==null)play(cur,best)});
 $('rl').onclick=()=>{if(cur==0)roll()};
 addEventListener('keydown',e=>{if((e.key==' '||e.key=='Enter')&&cur==0&&ph=='roll'){e.preventDefault();roll()}});
 function nw(){ACT=$('np').value==2?[0,2]:[0,1,2,3];P=[0,1,2,3].map(()=>[-1,-1,-1,-1]);lastP=[null,null,null,null];
   cur=0;sixes=0;six=0;over=0;face(1);turn()}
 $('nw').onclick=nw;$('np').onchange=nw;
 nw();requestAnimationFrame(loop);
+MP=installMultiplayer({
+  game:"parchis",capacity:()=>+$('np').value,
+  getState:()=>({P,cur,ph,pend,six,sixes,lastP,over,ACT}),
+  setState:d=>{P=d.P;cur=d.cur;ph=d.ph;pend=d.pend;six=d.six;sixes=d.sixes;lastP=d.lastP;over=d.over;ACT=d.ACT;ok=ph==='move'?legal(cur,pend):[];face(Math.max(1,Math.min(6,pend||1)));players();turn()},
+  getTurn:()=>Math.max(0,ACT.indexOf(cur)),isOver:()=>over,
+  onMode:seat=>{human=seat;turn();$('np').disabled=true;$('nw').disabled=true},
+  onLeave:()=>{$('np').disabled=false;$('nw').disabled=false;nw()}
+});
 </script></body></html>
